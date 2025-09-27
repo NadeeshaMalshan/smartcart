@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Cashier Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+        .payment-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .payment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .status-declined {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .status-approved {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-update-btn {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+        .status-update-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .btn-pending:hover {
+            background-color: #fde68a;
+        }
+        .btn-approved {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .btn-approved:hover {
+            background-color: #a7f3d0;
+        }
+        .btn-declined {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-declined:hover {
+            background-color: #fecaca;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600" th:text="${employee.empid} + ' (Cashier)'"></span>
+                    <a href="/employee/logout" class="text-slate-500 hover:text-brand">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            
+            <!-- Header Section -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 mb-2">Payment Dashboard</h1>
+                    <p class="text-slate-600">Employee ID: <span th:text="${employee.empid}" class="font-semibold"></span></p>
+                            <p class="text-slate-600">View and manage all customer payments</p>
+                </div>
+                        <div class="flex space-x-3">
+                            <button onclick="refreshPayments()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Refresh
+                            </button>
+                            <a href="/employee/dashboard" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                </svg>
+                                Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                <p class="mt-2 text-slate-600">Loading payments...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-red-800">Error loading payments</h3>
+                <p id="errorMessage" class="mt-1 text-sm text-red-600"></p>
+                <div class="mt-6">
+                    <button onclick="refreshPayments()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Try Again
+                    </button>
+                    </div>
+                </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                <h3 class="mt-2 text-sm font-medium text-slate-900">No payments found</h3>
+                <p class="mt-1 text-sm text-slate-500">There are no payments to display at the moment.</p>
+            </div>
+
+            <!-- Payments Grid -->
+            <div id="paymentsGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Payment cards will be dynamically inserted here -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Payment Details</h3>
+                    <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                    </button>
+                </div>
+                <div id="modalContent">
+                    <!-- Modal content will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal for Full-Size Payment Slip -->
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-60">
+        <div class="relative top-10 mx-auto p-5 w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-white">Payment Slip - Full Size</h3>
+                <button onclick="closeImageModal()" class="text-white hover:text-gray-300">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                </button>
+            </div>
+            <div class="text-center">
+                <img id="fullSizeImage" src="" alt="Payment Slip Full Size" class="max-w-full h-auto rounded-lg shadow-2xl mx-auto">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load payments on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPayments();
+        });
+
+        function loadPayments() {
+            showLoading();
+            
+            fetch('/api/payments')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    
+                    if (data.success) {
+                        if (data.payments && data.payments.length > 0) {
+                            displayPayments(data.payments);
+                            // Check stock availability for each payment
+                            data.payments.forEach(payment => {
+                                checkStockAvailability(payment.paymentId);
+                            });
+                        } else {
+                            showEmpty();
+                        }
+                    } else {
+                        showError(data.message || 'Failed to load payments');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Network error: ' + error.message);
+                });
+        }
+        
+        function checkStockAvailability(paymentId) {
+            fetch(`/api/payments/${paymentId}/stock-check`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const approveBtn = document.getElementById(`approve-btn-${paymentId}`);
+                        const modalApproveBtn = document.getElementById(`modal-approve-btn-${paymentId}`);
+                        const warningDiv = document.getElementById(`stock-warning-${paymentId}`);
+                        
+                        // Handle main approve button
+                        if (approveBtn && warningDiv) {
+                            if (!data.canApprove) {
+                                // Disable approve button and show warning
+                                approveBtn.disabled = true;
+                                approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                                approveBtn.title = data.message;
+                                warningDiv.textContent = data.message;
+                                warningDiv.classList.remove('hidden');
+                            } else {
+                                // Enable approve button and hide warning
+                                approveBtn.disabled = false;
+                                approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                approveBtn.title = '';
+                                warningDiv.classList.add('hidden');
+                            }
+                        }
+                        
+                        // Handle modal approve button
+                        if (modalApproveBtn) {
+                            if (!data.canApprove) {
+                                // Disable modal approve button
+                                modalApproveBtn.disabled = true;
+                                modalApproveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                                modalApproveBtn.title = data.message;
+                            } else {
+                                // Enable modal approve button
+                                modalApproveBtn.disabled = false;
+                                modalApproveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                modalApproveBtn.title = '';
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking stock availability:', error);
+                });
+        }
+
+        function displayPayments(payments) {
+            const grid = document.getElementById('paymentsGrid');
+            grid.innerHTML = '';
+            
+            payments.forEach(payment => {
+                const card = createPaymentCard(payment);
+                grid.appendChild(card);
+            });
+            
+            grid.classList.remove('hidden');
+        }
+
+        function createPaymentCard(payment) {
+            const card = document.createElement('div');
+            card.className = 'payment-card bg-white overflow-hidden shadow rounded-lg';
+            
+            const statusClass = getStatusClass(payment.orderStatus);
+            const formattedDate = formatDate(payment.createdAt);
+            
+            card.innerHTML = `
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-slate-800">Payment #${payment.paymentId}</h3>
+                            <p class="text-sm text-slate-600">Customer: ${payment.username}</p>
+                        </div>
+                        <span class="status-badge ${statusClass}">${payment.orderStatus}</span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-slate-700 mb-2">Items:</h4>
+                        <div class="space-y-1">
+                            ${payment.items.map(item => `
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-600">${item.name} (x${item.quantity})</span>
+                                    <span class="font-medium">$${item.subtotal.toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-lg font-semibold text-slate-800">Total:</span>
+                            <span class="text-lg font-bold text-brand">$${payment.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-slate-500 mb-3">
+                            <span>Date: ${formattedDate}</span>
+                        </div>
+                        
+                        <!-- Status Update Buttons -->
+                        <div class="mb-3">
+                            <div class="flex space-x-2 justify-center">
+                                ${payment.orderStatus.toLowerCase() !== 'pending' ? 
+                                    `<button onclick="updatePaymentStatus(${payment.paymentId}, 'PENDING')" 
+                                            class="status-update-btn btn-pending">
+                                        Set Pending
+                                    </button>` : ''}
+                                ${payment.orderStatus.toLowerCase() !== 'approved' ? 
+                                    `<button id="approve-btn-${payment.paymentId}" onclick="updatePaymentStatus(${payment.paymentId}, 'APPROVED')" 
+                                            class="status-update-btn btn-approved">
+                                        Approve
+                                    </button>` : ''}
+                                ${payment.orderStatus.toLowerCase() !== 'declined' ? 
+                                    `<button onclick="updatePaymentStatus(${payment.paymentId}, 'DECLINED')" 
+                                            class="status-update-btn btn-declined">
+                                        Decline
+                                    </button>` : ''}
+                            </div>
+                            <div id="stock-warning-${payment.paymentId}" class="text-sm text-red-600 mt-2 hidden"></div>
+                        </div>
+                        
+                        <button onclick="viewPaymentDetails(${payment.paymentId})" 
+                                class="w-full bg-brand hover:bg-brand-dark text-white py-2 px-4 rounded-lg transition-colors">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function getStatusClass(status) {
+            switch(status.toLowerCase()) {
+                case 'pending': return 'status-pending';
+                case 'completed': return 'status-completed';
+                case 'cancelled': return 'status-cancelled';
+                case 'declined': return 'status-declined';
+                case 'approved': return 'status-approved';
+                default: return 'status-pending';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function viewPaymentDetails(paymentId) {
+            // Find the payment data
+            fetch('/api/payments')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const payment = data.payments.find(p => p.paymentId === paymentId);
+                        if (payment) {
+                            showPaymentModal(payment);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching payment details:', error);
+                });
+        }
+
+        function showPaymentModal(payment) {
+            const modal = document.getElementById('paymentModal');
+            const content = document.getElementById('modalContent');
+            
+            const formattedDate = formatDate(payment.createdAt);
+            const statusClass = getStatusClass(payment.orderStatus);
+            
+            // Customer payment details section
+            let customerPaymentSection = '';
+            if (payment.customerPaymentDetails) {
+                const details = payment.customerPaymentDetails;
+                customerPaymentSection = `
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            Customer Payment Details
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-blue-700">Bank Name</label>
+                                <p class="mt-1 text-sm text-blue-900 font-medium">${details.bankName}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-blue-700">Account Holder</label>
+                                <p class="mt-1 text-sm text-blue-900 font-medium">${details.accountHolderName}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-blue-700">Account Number</label>
+                                <p class="mt-1 text-sm text-blue-900 font-medium font-mono">${details.accountNumber}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                customerPaymentSection = `
+                    <div class="bg-yellow-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-yellow-900 mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            Customer Payment Details
+                        </h4>
+                        <p class="text-sm text-yellow-800">No payment details available for this customer.</p>
+                    </div>
+                `;
+            }
+            
+            // Payment slip section
+            let paymentSlipSection = '';
+            if (payment.payslipLocationPath) {
+                const fileExtension = payment.payslipLocationPath.split('.').pop().toLowerCase();
+                const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension);
+                const isPdf = fileExtension === 'pdf';
+                
+                if (isImage) {
+                    paymentSlipSection = `
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-green-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                Payment Slip
+                            </h4>
+                            <div class="text-center">
+                                <img src="/payslips/${payment.payslipLocationPath.split('/').pop()}" 
+                                     alt="Payment Slip" 
+                                     class="max-w-full h-auto rounded-lg shadow-md mx-auto cursor-pointer"
+                                     onclick="openImageModal('/payslips/${payment.payslipLocationPath.split('/').pop()}')"
+                                     style="max-height: 400px;">
+                                <p class="text-sm text-green-700 mt-2">Click image to view full size</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (isPdf) {
+                    paymentSlipSection = `
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-green-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Payment Slip (PDF)
+                            </h4>
+                            <div class="text-center">
+                                <div class="bg-white rounded-lg p-6 shadow-md inline-block">
+                                    <svg class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-600 mb-4">PDF Document</p>
+                                    <a href="/payslips/${payment.payslipLocationPath.split('/').pop()}" 
+                                       target="_blank" 
+                                       class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                        View PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                    `;
+                }
+            } else {
+                paymentSlipSection = `
+                    <div class="bg-yellow-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-yellow-900 mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            Payment Slip
+                        </h4>
+                        <p class="text-sm text-yellow-800">No payment slip uploaded for this order.</p>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Basic Payment Info -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Order Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Payment ID</label>
+                                <p class="mt-1 text-sm text-gray-900 font-mono">#${payment.paymentId}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Status</label>
+                                <p class="mt-1"><span class="status-badge ${statusClass}">${payment.orderStatus}</span></p>
+                </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Customer</label>
+                                <p class="mt-1 text-sm text-gray-900 font-medium">${payment.username}</p>
+            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Order Date</label>
+                                <p class="mt-1 text-sm text-gray-900">${formattedDate}</p>
+                    </div>
+                </div>
+            </div>
+
+                    <!-- Customer Payment Details -->
+                    ${customerPaymentSection}
+                    
+                    <!-- Payment Slip -->
+                    ${paymentSlipSection}
+                    
+                    <!-- Items -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h4>
+                        <div class="space-y-3">
+                            ${payment.items.map(item => `
+                                <div class="flex justify-between items-center py-3 px-4 bg-white rounded-lg border border-gray-200">
+                                    <div>
+                                        <p class="font-medium text-gray-900">${item.name}</p>
+                                        <p class="text-sm text-gray-500">Product ID: ${item.productId}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm text-gray-600">Qty: ${item.quantity}</p>
+                                        <p class="font-medium text-gray-900">$${item.price.toFixed(2)} each</p>
+                                        <p class="font-semibold text-brand">$${item.subtotal.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+        </div>
+    </div>
+                    
+                    <!-- Total -->
+                    <div class="bg-brand text-white rounded-lg p-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-semibold">Total Amount:</span>
+                            <span class="text-2xl font-bold">$${payment.subtotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Update Actions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Update Payment Status</h4>
+                        <div class="flex flex-wrap gap-3">
+                            ${payment.orderStatus.toLowerCase() !== 'pending' ? 
+                                `<button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'PENDING')" 
+                                        class="status-update-btn btn-pending px-4 py-2">
+                                    Set to Pending
+                                </button>` : ''}
+                            ${payment.orderStatus.toLowerCase() !== 'approved' ? 
+                                `<button id="modal-approve-btn-${payment.paymentId}" onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'APPROVED')" 
+                                        class="status-update-btn btn-approved px-4 py-2">
+                                    Approve Payment
+                                </button>` : ''}
+                            ${payment.orderStatus.toLowerCase() !== 'declined' ? 
+                                `<button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'DECLINED')" 
+                                        class="status-update-btn btn-declined px-4 py-2">
+                                    Decline Payment
+                                </button>` : ''}
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Current status: <span class="font-medium ${statusClass}">${payment.orderStatus}</span></p>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function openImageModal(imageSrc) {
+            const imageModal = document.getElementById('imageModal');
+            const fullSizeImage = document.getElementById('fullSizeImage');
+            fullSizeImage.src = imageSrc;
+            imageModal.classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function refreshPayments() {
+            loadPayments();
+        }
+
+        function updatePaymentStatus(paymentId, newStatus) {
+            if (!confirm(`Are you sure you want to change the payment status to ${newStatus}?`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('status', newStatus);
+            
+            fetch(`/api/payments/${paymentId}/status`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Payment status updated to ${newStatus}`, 'success');
+                    // Refresh the payments to show updated status
+                    loadPayments();
+                } else {
+                    showNotification(data.message || 'Failed to update payment status', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating payment status:', error);
+                showNotification('Network error. Please try again.', 'error');
+            });
+        }
+
+        function updatePaymentStatusFromModal(paymentId, newStatus) {
+            if (!confirm(`Are you sure you want to change the payment status to ${newStatus}?`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('status', newStatus);
+            
+            fetch(`/api/payments/${paymentId}/status`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Payment status updated to ${newStatus}`, 'success');
+                    // Close modal and refresh payments
+                    closePaymentModal();
+                    loadPayments();
+                } else {
+                    showNotification(data.message || 'Failed to update payment status', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating payment status:', error);
+                showNotification('Network error. Please try again.', 'error');
+            });
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+            
+            if (type === 'success') {
+                notification.className += ' bg-green-500 text-white';
+            } else if (type === 'error') {
+                notification.className += ' bg-red-500 text-white';
+            } else {
+                notification.className += ' bg-blue-500 text-white';
+            }
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ${type === 'success' ? 
+                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>'
+                        }
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('paymentsGrid').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorState').classList.remove('hidden');
+        }
+
+        function showEmpty() {
+            document.getElementById('emptyState').classList.remove('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('paymentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePaymentModal();
+            }
+        });
+
+        // Close image modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
