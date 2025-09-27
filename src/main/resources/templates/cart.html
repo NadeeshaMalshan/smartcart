@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">SmartCart - Shopping Cart</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="bg-white min-h-screen">
+        <!-- Header -->
+        <header class="bg-white sticky top-0 z-50 shadow-sm">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-brand">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <span>SmartCart</span>
+                </a>
+                
+                <!-- Navigation -->
+                <div class="flex items-center space-x-4">
+                    <!-- Orders Button (only show when logged in) -->
+                    <a th:if="${isLoggedIn}" href="/orders" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        <span class="font-semibold">Orders</span>
+                    </a>
+                    
+                    <!-- User Menu (only show when logged in) -->
+                    <div th:if="${isLoggedIn}" class="relative">
+                        <button class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full hover:bg-slate-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
+                            <span class="font-semibold" th:text="${customer.username}">User</span>
+                        </button>
+                    </div>
+                    
+                    <a href="/shopping" class="bg-brand text-white px-6 py-2 rounded-full hover-bg-brand-dark">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8" data-logged-in th:attr="data-logged-in=${isLoggedIn}">
+            <h1 class="text-3xl font-bold text-slate-800 mb-8">Shopping Cart</h1>
+            
+            <!-- Empty Cart -->
+            <div id="empty-cart" class="text-center py-16" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-slate-400 mb-4"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                <h2 class="text-2xl font-semibold text-slate-600 mb-4">Your cart is empty</h2>
+                <p class="text-slate-500 mb-6">Add some products to get started!</p>
+                <a href="/shopping" class="bg-brand text-white px-8 py-3 rounded-full hover-bg-brand-dark font-semibold">
+                    Start Shopping
+                </a>
+            </div>
+
+            <!-- Cart Items -->
+            <div id="cart-items" class="max-w-4xl mx-auto">
+                <!-- Selection Controls -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="select-all" class="w-4 h-4 text-brand rounded border-slate-300 focus:ring-brand">
+                            <span class="text-sm font-medium text-slate-700">Select All</span>
+                        </label>
+                        <span id="selected-count" class="text-sm text-slate-500">0 items selected</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Cart Items List -->
+                    <div class="lg:col-span-2">
+                        <div id="cart-list" class="space-y-4">
+                            <!-- Cart items will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white border border-slate-200 rounded-xl p-6 sticky top-24">
+                            <h3 class="text-xl font-bold text-slate-800 mb-6">Order Summary</h3>
+                            
+                            <!-- Stock Status Summary -->
+                            <div id="stock-summary" class="mb-6 p-4 bg-slate-50 rounded-lg" style="display: none;">
+                                <h4 class="text-sm font-semibold text-slate-700 mb-2">Stock Status</h4>
+                                <div id="stock-summary-content" class="space-y-1">
+                                    <!-- Stock status will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4 mb-6">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">Subtotal</span>
+                                    <span id="subtotal" class="font-semibold">LKR 0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">Delivery</span>
+                                    <span class="font-semibold text-green-600">FREE</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">Tax</span>
+                                    <span id="tax" class="font-semibold">LKR 0.00</span>
+                                </div>
+                                <hr class="border-slate-200">
+                                <div class="flex justify-between text-lg font-bold">
+                                    <span>Total</span>
+                                    <span id="total" class="text-brand">LKR 0.00</span>
+                                </div>
+                            </div>
+
+                            <button id="checkout-btn" class="w-full bg-brand text-white font-bold py-4 rounded-lg hover-bg-brand-dark text-lg" style="display: none;" onclick="proceedToBilling()">
+                                Proceed to Checkout
+                            </button>
+                            
+                            <p class="text-xs text-slate-500 text-center mt-4">
+                                Secure checkout powered by SmartCart
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript for cart functionality -->
+    <script>
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let selectedItems = new Set();
+        
+        // Migrate old cart data to include price field
+        function migrateCartData() {
+            let needsUpdate = false;
+            cart = cart.map(item => {
+                if (!item.hasOwnProperty('price')) {
+                    item.price = 0; // Default price for old items
+                    needsUpdate = true;
+                }
+                return item;
+            });
+            
+            if (needsUpdate) {
+                localStorage.setItem('cart', JSON.stringify(cart));
+                console.log('Cart data migrated to include price field');
+            }
+        }
+        
+        // Initialize cart data migration
+        migrateCartData();
+        
+        function renderCart() {
+            console.log('Current cart:', cart); // Debug log
+            const cartList = document.getElementById('cart-list');
+            const emptyCart = document.getElementById('empty-cart');
+            const cartItems = document.getElementById('cart-items');
+            
+            if (cart.length === 0) {
+                console.log('Cart is empty, showing empty cart message');
+                emptyCart.style.display = 'block';
+                cartItems.style.display = 'none';
+                return;
+            }
+            
+            console.log('Cart has items, rendering cart items');
+            emptyCart.style.display = 'none';
+            cartItems.style.display = 'block';
+            
+            cartList.innerHTML = cart.map(item => `
+                <div class="bg-white border border-slate-200 rounded-xl p-6 flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" 
+                               class="item-checkbox w-4 h-4 text-brand rounded border-slate-300 focus:ring-brand" 
+                               data-item-id="${item.id}"
+                               ${selectedItems.has(String(item.id)) ? 'checked' : ''}>
+                    </div>
+                    <div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center">
+                        ${item.imageUrl ? 
+                            `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-contain rounded-lg" />` :
+                            `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>`
+                        }
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-semibold text-slate-800">${item.name}</h3>
+                        <p class="text-sm text-slate-500">LKR ${(item.price || 0).toFixed(2)} each</p>
+                        <div class="mt-1">
+                            <span id="stock-status-${item.id}" class="text-xs font-medium">
+                                <span class="text-slate-400">Loading stock status...</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateQuantity(${item.id}, -1)" class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                            </button>
+                            <span class="w-8 text-center font-semibold">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            </button>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-brand">LKR ${((item.price || 0) * item.quantity).toFixed(2)}</p>
+                            <button class="remove-item-btn text-red-500 text-sm hover:text-red-700" data-item-id="${item.id}">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners to checkboxes
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            console.log('Found', checkboxes.length, 'item checkboxes');
+            
+            checkboxes.forEach((checkbox, index) => {
+                console.log(`Adding event listener to checkbox ${index} for item:`, checkbox.dataset.itemId);
+                checkbox.addEventListener('change', handleItemSelection);
+            });
+            
+            // Add event listeners to remove buttons
+            const removeButtons = document.querySelectorAll('.remove-item-btn');
+            console.log('Found', removeButtons.length, 'remove buttons');
+            
+            removeButtons.forEach((button, index) => {
+                console.log(`Adding event listener to remove button ${index} for item:`, button.dataset.itemId);
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Remove button clicked for item:', this.dataset.itemId);
+                    const itemId = parseInt(this.dataset.itemId);
+                    console.log('Parsed item ID:', itemId);
+                    removeItem(itemId);
+                });
+            });
+            
+            updateTotals();
+            updateSelectionUI();
+            
+            // Load stock status after rendering
+            setTimeout(() => {
+                loadStockStatus();
+            }, 100);
+        }
+        
+        function updateQuantity(productId, change) {
+            const item = cart.find(item => String(item.id) === String(productId));
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(item => String(item.id) !== String(productId));
+                }
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+        
+        function removeItem(productId) {
+            console.log('removeItem called with productId:', productId, 'type:', typeof productId);
+            console.log('Cart before removal:', cart);
+            
+            cart = cart.filter(item => {
+                console.log('Comparing item.id:', item.id, 'type:', typeof item.id, 'with productId:', productId, 'type:', typeof productId);
+                return String(item.id) !== String(productId); // Convert both to strings for consistent comparison
+            });
+            
+            console.log('Cart after removal:', cart);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+            
+            console.log('Item removed successfully');
+        }
+        
+        function updateTotals() {
+            console.log('Updating totals...');
+            console.log('Selected items:', Array.from(selectedItems));
+            console.log('Cart items:', cart);
+            
+            const selectedCartItems = cart.filter(item => selectedItems.has(String(item.id)));
+            console.log('Selected cart items:', selectedCartItems);
+            
+            const subtotal = selectedCartItems.reduce((sum, item) => {
+                const price = parseFloat(item.price) || 0; // Ensure price is a number
+                const itemTotal = price * item.quantity;
+                console.log(`Item ${item.name}: ${price} x ${item.quantity} = ${itemTotal}`);
+                return sum + itemTotal;
+            }, 0);
+            
+            console.log('Subtotal:', subtotal);
+            
+            const tax = subtotal * 0.15; // 15% tax
+            const total = subtotal + tax;
+            
+            document.getElementById('subtotal').textContent = `LKR ${subtotal.toFixed(2)}`;
+            document.getElementById('tax').textContent = `LKR ${tax.toFixed(2)}`;
+            document.getElementById('total').textContent = `LKR ${total.toFixed(2)}`;
+            
+            // Show/hide checkout button based on selected items
+            const checkoutBtn = document.getElementById('checkout-btn');
+            if (selectedItems.size > 0) {
+                checkoutBtn.style.display = 'block';
+            } else {
+                checkoutBtn.style.display = 'none';
+            }
+            
+            console.log('Final totals - Subtotal:', subtotal, 'Tax:', tax, 'Total:', total);
+        }
+        
+        function handleItemSelection(event) {
+            console.log('handleItemSelection called');
+            console.log('Event target:', event.target);
+            console.log('Item ID from dataset:', event.target.dataset.itemId);
+            
+            const itemId = event.target.dataset.itemId; // Keep as string for consistency
+            console.log('Item ID:', itemId);
+            console.log('Checkbox checked:', event.target.checked);
+            
+            if (event.target.checked) {
+                selectedItems.add(itemId);
+                console.log('Added item to selection. Selected items:', Array.from(selectedItems));
+            } else {
+                selectedItems.delete(itemId);
+                console.log('Removed item from selection. Selected items:', Array.from(selectedItems));
+            }
+            
+            console.log('Calling updateSelectionUI...');
+            updateSelectionUI();
+            console.log('Calling updateTotals...');
+            updateTotals();
+        }
+        
+        function updateSelectionUI() {
+            const selectAllCheckbox = document.getElementById('select-all');
+            const selectedCount = document.getElementById('selected-count');
+            
+            const totalItems = cart.length;
+            const selectedCountValue = selectedItems.size;
+            
+            // Update select all checkbox
+            if (selectedCountValue === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (selectedCountValue === totalItems) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+                selectAllCheckbox.checked = false;
+            }
+            
+            // Update selected count text
+            selectedCount.textContent = `${selectedCountValue} item${selectedCountValue !== 1 ? 's' : ''} selected`;
+            
+            // Update stock summary if stock status is available
+            if (window.lastStockStatus) {
+                updateStockSummary(window.lastStockStatus);
+            }
+        }
+        
+        function handleSelectAll(event) {
+            console.log('handleSelectAll called');
+            const isChecked = event.target.checked;
+            console.log('Select all checked:', isChecked);
+            
+            selectedItems.clear();
+            
+            if (isChecked) {
+                cart.forEach(item => {
+                    const itemId = String(item.id); // Keep as string for consistency
+                    selectedItems.add(itemId);
+                    console.log('Added item to selection:', itemId);
+                });
+            }
+            
+            console.log('Selected items after select all:', Array.from(selectedItems));
+            
+            // Update all checkboxes
+            document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            
+            console.log('Calling updateSelectionUI...');
+            updateSelectionUI();
+            console.log('Calling updateTotals...');
+            updateTotals();
+        }
+        
+        // Load stock status for all cart items
+        function loadStockStatus() {
+            if (cart.length === 0) return;
+            
+            const productIds = cart.map(item => item.id);
+            
+            fetch('/shopping/api/products/stock-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(productIds)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateStockStatusDisplay(data.stockStatus);
+                } else {
+                    console.error('Failed to load stock status:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading stock status:', error);
+            });
+        }
+        
+        // Update stock status display for cart items
+        function updateStockStatusDisplay(stockStatus) {
+            // Store stock status globally for use in other functions
+            window.lastStockStatus = stockStatus;
+            
+            cart.forEach(item => {
+                const statusElement = document.getElementById(`stock-status-${item.id}`);
+                if (statusElement && stockStatus[item.id]) {
+                    const status = stockStatus[item.id];
+                    const isInStock = status.isInStock;
+                    const stockQuantity = status.stockQuantity;
+                    
+                    if (isInStock) {
+                        statusElement.innerHTML = `
+                            <span class="text-green-600 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                </svg>
+                                Available (${stockQuantity} in stock)
+                            </span>
+                        `;
+                    } else {
+                        statusElement.innerHTML = `
+                            <span class="text-red-600 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1">
+                                    <path d="M18 6 6 18"/>
+                                    <path d="m6 6 12 12"/>
+                                </svg>
+                                Not Available
+                            </span>
+                        `;
+                    }
+                }
+            });
+            
+            // Update stock summary for selected items
+            updateStockSummary(stockStatus);
+        }
+        
+        // Update stock summary for selected items
+        function updateStockSummary(stockStatus) {
+            const stockSummary = document.getElementById('stock-summary');
+            const stockSummaryContent = document.getElementById('stock-summary-content');
+            
+            if (selectedItems.size === 0) {
+                stockSummary.style.display = 'none';
+                return;
+            }
+            
+            const selectedCartItems = cart.filter(item => selectedItems.has(String(item.id)));
+            const outOfStockItems = selectedCartItems.filter(item => 
+                stockStatus[item.id] && !stockStatus[item.id].isInStock
+            );
+            
+            if (outOfStockItems.length > 0) {
+                stockSummary.style.display = 'block';
+                stockSummaryContent.innerHTML = outOfStockItems.map(item => {
+                    const status = stockStatus[item.id];
+                    return `
+                        <div class="text-xs text-red-600 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1">
+                                <path d="M18 6 6 18"/>
+                                <path d="m6 6 12 12"/>
+                            </svg>
+                            ${status.name} - Not Available
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                stockSummary.style.display = 'none';
+            }
+        }
+        
+        function proceedToBilling() {
+            // Check if user is logged in before proceeding
+            checkLoginAndProceed();
+        }
+        
+        function checkLoginAndProceed() {
+            // Check if user is logged in from server-side data
+            const isLoggedIn = checkUserLoginStatus();
+            
+            if (!isLoggedIn) {
+                // User is not logged in, show login required modal
+                showLoginRequiredForCheckout();
+            } else {
+                // User is logged in, proceed to billing
+                proceedToBillingPage();
+            }
+        }
+        
+        function checkUserLoginStatus() {
+            // Check if customer data is available from server-side session
+            // The isLoggedIn attribute is passed from the controller
+            const loginStatusElement = document.querySelector('[data-logged-in]');
+            return loginStatusElement !== null && loginStatusElement.dataset.loggedIn === 'true';
+        }
+        
+        
+        function showLoginRequiredForCheckout() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            messageDiv.innerHTML = `
+                <div class="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Login Required</h3>
+                    <p class="text-slate-600 mb-6">You need to be logged in to proceed with checkout. Please sign in to your account.</p>
+                    <div class="flex space-x-3">
+                        <button onclick="goToLoginFromCart()" class="flex-1 bg-brand text-white px-6 py-3 rounded-lg hover-bg-brand-dark font-semibold">
+                            Sign In
+                        </button>
+                        <button onclick="closeLoginModal()" class="flex-1 bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 font-semibold">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(messageDiv);
+        }
+        
+        function goToLoginFromCart() {
+            // Store selected items and return URL
+            localStorage.setItem('selectedItems', JSON.stringify(Array.from(selectedItems)));
+            localStorage.setItem('returnUrl', '/billing');
+            window.location.href = '/login?returnUrl=/billing';
+        }
+        
+        function closeLoginModal() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function proceedToBillingPage() {
+            // Store selected items for billing page
+            localStorage.setItem('selectedItems', JSON.stringify(Array.from(selectedItems)));
+            
+            // Redirect to billing page
+            window.location.href = '/billing';
+        }
+        
+        // Initialize cart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCart();
+            
+            // Add event listener for select all checkbox
+            document.getElementById('select-all').addEventListener('change', handleSelectAll);
+        });
+    </script>
+</body>
+</html>
