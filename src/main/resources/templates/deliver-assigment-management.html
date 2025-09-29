@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Delivery Assignment Management</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+        .assignment-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .assignment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-assigned {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-picked_up {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-delivered {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .loading-spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #16a34a;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+            min-width: 300px;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background-color: #10b981;
+        }
+        .toast.error {
+            background-color: #ef4444;
+        }
+        .toast.warning {
+            background-color: #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="8" cy="21" r="1"/>
+                            <circle cx="19" cy="21" r="1"/>
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+                        </svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600">Delivery Assignment Management</span>
+                    <a href="/employee/cashier-dashboard" class="text-slate-500 hover:text-brand">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            
+            <!-- Header Section -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 mb-2">Delivery Assignment Management</h1>
+                            <p class="text-slate-600">Manage delivery assignments for orders and delivery personnel</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="openCreateModal()" class="bg-brand hover:hover-bg-brand-dark text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Create Assignment
+                            </button>
+                            <button onclick="refreshAssignments()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Filter by Status</label>
+                            <select id="statusFilter" onchange="filterAssignments()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                                <option value="">All Statuses</option>
+                                <option value="ASSIGNED">Assigned</option>
+                                <option value="PICKED_UP">Picked Up</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Filter by Delivery Person</label>
+                            <select id="deliveryPersonFilter" onchange="filterAssignments()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                                <option value="">All Delivery Persons</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Search</label>
+                            <input type="text" id="searchInput" onkeyup="filterAssignments()" placeholder="Search by notes..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="clearFilters()" class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                <p class="mt-2 text-slate-600">Loading assignments...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-red-800">Error loading assignments</h3>
+                <p id="errorMessage" class="mt-1 text-sm text-red-600"></p>
+                <div class="mt-6">
+                    <button onclick="refreshAssignments()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-slate-800">No assignments found</h3>
+                <p class="mt-1 text-sm text-slate-600">Get started by creating your first delivery assignment.</p>
+                <div class="mt-6">
+                    <button onclick="openCreateModal()" class="bg-brand hover:hover-bg-brand-dark text-white px-4 py-2 rounded-lg transition-colors">
+                        Create Assignment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Assignments Grid -->
+            <div id="assignmentsGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Assignment cards will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Assignment Modal -->
+    <div id="createModal" class="modal">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="text-xl font-semibold text-slate-800">Create New Assignment</h3>
+            </div>
+            <form id="createForm" class="px-6 py-4">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Order *</label>
+                        <select id="createOrderId" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                            <option value="">Select an order...</option>
+                        </select>
+                        <div id="createOrderError" class="hidden text-red-600 text-sm mt-1"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Delivery Person *</label>
+                        <select id="createDeliveryPersonId" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                            <option value="">Select a delivery person...</option>
+                        </select>
+                        <div id="createDeliveryPersonError" class="hidden text-red-600 text-sm mt-1"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Notes</label>
+                        <textarea id="createNotes" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent" placeholder="Optional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeCreateModal()" class="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="createSubmitBtn" class="bg-brand hover:hover-bg-brand-dark text-white px-6 py-2 rounded-lg transition-colors flex items-center">
+                        <span>Create Assignment</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Assignment Modal -->
+    <div id="editModal" class="modal">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="text-xl font-semibold text-slate-800">Edit Assignment</h3>
+            </div>
+            <form id="editForm" class="px-6 py-4">
+                <input type="hidden" id="editAssignmentId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Order</label>
+                        <input type="text" id="editOrderInfo" readonly class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Delivery Person *</label>
+                        <select id="editDeliveryPersonId" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                            <option value="">Select a delivery person...</option>
+                        </select>
+                        <div id="editDeliveryPersonError" class="hidden text-red-600 text-sm mt-1"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                        <select id="editStatus" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="PICKED_UP">Picked Up</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Notes</label>
+                        <textarea id="editNotes" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent" placeholder="Optional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="editSubmitBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center">
+                        <span>Update Assignment</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="text-xl font-semibold text-slate-800">Confirm Action</h3>
+            </div>
+            <div class="px-6 py-4">
+                <p id="confirmMessage" class="text-slate-600"></p>
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="button" id="confirmBtn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="flex items-center">
+            <svg id="toastIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let assignments = [];
+        let orders = [];
+        let deliveryPersons = [];
+        let filteredAssignments = [];
+        const API_BASE_URL = '/api/delivery-assignments';
+        const ORDERS_API_URL = '/api/orders';
+        const DELIVERY_PERSONS_API_URL = '/api/delivery-persons';
+
+        // DOM elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const emptyState = document.getElementById('emptyState');
+        const assignmentsGrid = document.getElementById('assignmentsGrid');
+        const createModal = document.getElementById('createModal');
+        const editModal = document.getElementById('editModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const toast = document.getElementById('toast');
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInitialData();
+        });
+
+        // Load initial data
+        async function loadInitialData() {
+            showLoading();
+            try {
+                await Promise.all([
+                    loadOrders(),
+                    loadDeliveryPersons(),
+                    loadAssignments()
+                ]);
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                showError('Failed to load initial data. Please refresh the page.');
+            }
+        }
+
+        // Load orders for dropdown
+        async function loadOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch orders');
+                }
+                orders = await response.json();
+                orders = orders['data']
+                populateOrderDropdowns();
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showToast('Failed to load orders', 'error');
+            }
+        }
+
+        // Load delivery persons for dropdown
+        async function loadDeliveryPersons() {
+            try {
+                const response = await fetch(`${DELIVERY_PERSONS_API_URL}/active`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch delivery persons');
+                }
+                deliveryPersons = await response.json();
+                populateDeliveryPersonDropdowns();
+            } catch (error) {
+                console.error('Error loading delivery persons:', error);
+                showToast('Failed to load delivery persons', 'error');
+            }
+        }
+
+        // Load assignments
+        async function loadAssignments() {
+            try {
+                const response = await fetch(API_BASE_URL);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch assignments');
+                }
+                assignments = await response.json();
+                filteredAssignments = [...assignments];
+                renderAssignments();
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                showError('Failed to load assignments. Please try again.');
+            }
+        }
+
+        // Populate order dropdowns
+        function populateOrderDropdowns() {
+            const createOrderSelect = document.getElementById('createOrderId');
+            
+            // Clear existing options except the first one
+            createOrderSelect.innerHTML = '<option value="">Select an order...</option>';
+           
+            orders.forEach(order => {
+                const option = document.createElement('option');
+                option.value = order.paymentId;
+                option.textContent = `Order #${order.paymentId} - ${order.username} ($${order.subtotal})`;
+                createOrderSelect.appendChild(option);
+            });
+        }
+
+        // Populate delivery person dropdowns
+        function populateDeliveryPersonDropdowns() {
+            const createSelect = document.getElementById('createDeliveryPersonId');
+            const editSelect = document.getElementById('editDeliveryPersonId');
+            const filterSelect = document.getElementById('deliveryPersonFilter');
+            
+            // Clear existing options
+            createSelect.innerHTML = '<option value="">Select a delivery person...</option>';
+            editSelect.innerHTML = '<option value="">Select a delivery person...</option>';
+            filterSelect.innerHTML = '<option value="">All Delivery Persons</option>';
+            
+            deliveryPersons.forEach(person => {
+                const optionText = `${person.name} (${person.vehicleType})`;
+                
+                // Create select
+                const createOption = document.createElement('option');
+                createOption.value = person.id;
+                createOption.textContent = optionText;
+                createSelect.appendChild(createOption);
+                
+                // Edit select
+                const editOption = document.createElement('option');
+                editOption.value = person.id;
+                editOption.textContent = optionText;
+                editSelect.appendChild(editOption);
+                
+                // Filter select
+                const filterOption = document.createElement('option');
+                filterOption.value = person.id;
+                filterOption.textContent = optionText;
+                filterSelect.appendChild(filterOption);
+            });
+        }
+
+        // Render assignments
+        function renderAssignments() {
+            if (filteredAssignments.length === 0) {
+                showEmpty();
+                return;
+            }
+
+            showAssignments();
+            assignmentsGrid.innerHTML = '';
+
+            filteredAssignments.forEach(assignment => {
+                const card = createAssignmentCard(assignment);
+                assignmentsGrid.appendChild(card);
+            });
+        }
+
+        // Create assignment card
+        function createAssignmentCard(assignment) {
+            const card = document.createElement('div');
+            card.className = 'assignment-card bg-white rounded-xl shadow-lg p-6 border border-slate-200';
+            
+            const deliveryPerson = deliveryPersons.find(p => p.id === assignment.deliveryPerson.id);
+            const order = orders.find(o => o.paymentId === assignment.order.paymentId);
+            const statusClass = `status-${assignment.status.toLowerCase()}`;
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Assignment #${assignment.id}</h3>
+                        <p class="text-sm text-slate-600">Order #${assignment.order.paymentId}</p>
+                    </div>
+                    <span class="status-badge ${statusClass}">${assignment.status}</span>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">Customer:</p>
+                        <p class="text-sm text-slate-600">${assignment.order.username}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">Delivery Person:</p>
+                        <p class="text-sm text-slate-600">${assignment.deliveryPerson.name} (${assignment.deliveryPerson.vehicleType})</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">Order Total:</p>
+                        <p class="text-sm font-semibold text-brand">$${assignment.order.subtotal}</p>
+                    </div>
+                    ${assignment.notes ? `
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">Notes:</p>
+                        <p class="text-sm text-slate-600">${assignment.notes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="flex justify-between text-xs text-slate-500 mb-4">
+                    <span>Assigned: ${formatDate(assignment.assignedAt)}</span>
+                    ${assignment.deliveredAt ? `<span>Delivered: ${formatDate(assignment.deliveredAt)}</span>` : ''}
+                </div>
+                
+                <div class="flex space-x-2">
+                    ${assignment.status === 'ASSIGNED' ? `
+                        <button onclick="markAsPickedUp(${assignment.id})" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                            Mark Picked Up
+                        </button>
+                    ` : ''}
+                    ${assignment.status === 'PICKED_UP' ? `
+                        <button onclick="markAsDelivered(${assignment.id})" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                            Mark Delivered
+                        </button>
+                    ` : ''}
+                    <button onclick="openEditModal(${assignment.id})" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                        Edit
+                    </button>
+                    <button onclick="confirmDelete(${assignment.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                        Delete
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Show/hide states
+        function showLoading() {
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loadingState.classList.add('hidden');
+        }
+
+        function showError(message) {
+            hideLoading();
+            document.getElementById('errorMessage').textContent = message;
+            errorState.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function showEmpty() {
+            hideLoading();
+            errorState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function showAssignments() {
+            hideLoading();
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.remove('hidden');
+        }
+
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('createForm').reset();
+            clearValidationErrors('create');
+            createModal.classList.add('show');
+        }
+
+        function closeCreateModal() {
+            createModal.classList.remove('show');
+        }
+
+        function openEditModal(assignmentId) {
+            const assignment = assignments.find(a => a.id === assignmentId);
+            if (!assignment) return;
+
+            document.getElementById('editAssignmentId').value = assignment.id;
+            document.getElementById('editOrderInfo').value = `Order #${assignment.order.paymentId} - ${assignment.order.username}`;
+            document.getElementById('editDeliveryPersonId').value = assignment.deliveryPerson.id;
+            document.getElementById('editStatus').value = assignment.status;
+            document.getElementById('editNotes').value = assignment.notes || '';
+            
+            clearValidationErrors('edit');
+            editModal.classList.add('show');
+        }
+
+        function closeEditModal() {
+            editModal.classList.remove('show');
+        }
+
+        function confirmDelete(assignmentId) {
+            document.getElementById('confirmMessage').textContent = 'Are you sure you want to delete this assignment? This action cannot be undone.';
+            document.getElementById('confirmBtn').onclick = () => deleteAssignment(assignmentId);
+            confirmModal.classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            confirmModal.classList.remove('show');
+        }
+
+        // CRUD Operations
+        document.getElementById('createForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('createSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                submitBtn.innerHTML = '<div class="loading-spinner mr-2"></div>Creating...';
+                submitBtn.disabled = true;
+                
+                clearValidationErrors('create');
+                
+                const formData = {
+                    orderId: document.getElementById('createOrderId').value,
+                    deliveryPersonId: document.getElementById('createDeliveryPersonId').value,
+                    notes: document.getElementById('createNotes').value
+                };
+                
+                if (!validateCreateForm(formData)) {
+                    return;
+                }
+                
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Assignment created successfully', 'success');
+                    closeCreateModal();
+                    await loadAssignments();
+                } else {
+                    showToast(result.message || 'Failed to create assignment', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error creating assignment:', error);
+                showToast('Failed to create assignment', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('editSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                submitBtn.innerHTML = '<div class="loading-spinner mr-2"></div>Updating...';
+                submitBtn.disabled = true;
+                
+                clearValidationErrors('edit');
+                
+                const assignmentId = document.getElementById('editAssignmentId').value;
+                const deliveryPersonId = document.getElementById('editDeliveryPersonId').value;
+                const status = document.getElementById('editStatus').value;
+                const notes = document.getElementById('editNotes').value;
+                
+                if (!deliveryPersonId) {
+                    showValidationError('edit', 'DeliveryPerson', 'Please select a delivery person');
+                    return;
+                }
+                
+                // Update delivery person if changed
+                const currentAssignment = assignments.find(a => a.id == assignmentId);
+                if (currentAssignment.deliveryPerson.id != deliveryPersonId) {
+                    const reassignResponse = await fetch(`${API_BASE_URL}/${assignmentId}/reassign`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            newDeliveryPersonId: deliveryPersonId,
+                            reason: 'Updated via management interface'
+                        })
+                    });
+                    
+                    if (!reassignResponse.ok) {
+                        const error = await reassignResponse.json();
+                        showToast(error.message || 'Failed to reassign delivery person', 'error');
+                        return;
+                    }
+                }
+                
+                // Update notes
+                if (notes !== (currentAssignment.notes || '')) {
+                    const notesResponse = await fetch(`${API_BASE_URL}/${assignmentId}/notes`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ notes })
+                    });
+                    
+                    if (!notesResponse.ok) {
+                        const error = await notesResponse.json();
+                        showToast(error.message || 'Failed to update notes', 'error');
+                        return;
+                    }
+                }
+                
+                // Update status if needed
+                if (status !== currentAssignment.status) {
+                    let statusEndpoint = '';
+                    let statusData = { notes };
+                    
+                    switch (status) {
+                        case 'PICKED_UP':
+                            statusEndpoint = 'pickup';
+                            break;
+                        case 'DELIVERED':
+                            statusEndpoint = 'deliver';
+                            break;
+                        case 'CANCELLED':
+                            statusEndpoint = 'cancel';
+                            statusData = { reason: notes || 'Cancelled via management interface' };
+                            break;
+                    }
+                    
+                    if (statusEndpoint) {
+                        const statusResponse = await fetch(`${API_BASE_URL}/${assignmentId}/${statusEndpoint}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(statusData)
+                        });
+                        
+                        if (!statusResponse.ok) {
+                            const error = await statusResponse.json();
+                            showToast(error.message || 'Failed to update status', 'error');
+                            return;
+                        }
+                    }
+                }
+                
+                showToast('Assignment updated successfully', 'success');
+                closeEditModal();
+                await loadAssignments();
+                
+            } catch (error) {
+                console.error('Error updating assignment:', error);
+                showToast('Failed to update assignment', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        async function markAsPickedUp(assignmentId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${assignmentId}/pickup`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'Marked as picked up via management interface' })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Assignment marked as picked up', 'success');
+                    await loadAssignments();
+                } else {
+                    showToast(result.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showToast('Failed to update status', 'error');
+            }
+        }
+
+        async function markAsDelivered(assignmentId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${assignmentId}/deliver`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: 'Marked as delivered via management interface' })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Assignment marked as delivered', 'success');
+                    await loadAssignments();
+                } else {
+                    showToast(result.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showToast('Failed to update status', 'error');
+            }
+        }
+
+        async function deleteAssignment(assignmentId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${assignmentId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showToast('Assignment deleted successfully', 'success');
+                    closeConfirmModal();
+                    await loadAssignments();
+                } else {
+                    showToast(result.message || 'Failed to delete assignment', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting assignment:', error);
+                showToast('Failed to delete assignment', 'error');
+            }
+        }
+
+        // Filtering and search
+        function filterAssignments() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const deliveryPersonFilter = document.getElementById('deliveryPersonFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredAssignments = assignments.filter(assignment => {
+                const matchesStatus = !statusFilter || assignment.status === statusFilter;
+                const matchesDeliveryPerson = !deliveryPersonFilter || assignment.deliveryPerson.id == deliveryPersonFilter;
+                const matchesSearch = !searchTerm || 
+                    (assignment.notes && assignment.notes.toLowerCase().includes(searchTerm)) ||
+                    assignment.order.username.toLowerCase().includes(searchTerm) ||
+                    assignment.deliveryPerson.name.toLowerCase().includes(searchTerm);
+                
+                return matchesStatus && matchesDeliveryPerson && matchesSearch;
+            });
+            
+            renderAssignments();
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('deliveryPersonFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            filteredAssignments = [...assignments];
+            renderAssignments();
+        }
+
+        // Validation
+        function validateCreateForm(formData) {
+            let isValid = true;
+            
+            if (!formData.orderId) {
+                showValidationError('create', 'Order', 'Please select an order');
+                isValid = false;
+            }
+            
+            if (!formData.deliveryPersonId) {
+                showValidationError('create', 'DeliveryPerson', 'Please select a delivery person');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function showValidationError(form, field, message) {
+            const errorElement = document.getElementById(`${form}${field}Error`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        function clearValidationErrors(form) {
+            const errorElements = document.querySelectorAll(`[id^="${form}"][id$="Error"]`);
+            errorElements.forEach(element => {
+                element.classList.add('hidden');
+                element.textContent = '';
+            });
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast ${type}`;
+            
+            // Update icon based on type
+            if (type === 'success') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+            } else if (type === 'error') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+            } else if (type === 'warning') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function refreshAssignments() {
+            loadInitialData();
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === createModal) {
+                closeCreateModal();
+            }
+            if (e.target === editModal) {
+                closeEditModal();
+            }
+            if (e.target === confirmModal) {
+                closeConfirmModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

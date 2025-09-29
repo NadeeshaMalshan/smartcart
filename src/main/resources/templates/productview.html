@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">SmartCart - Product View</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .border-brand { border-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+        .header-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="bg-white">
+        <!-- Header -->
+        <header class="bg-white sticky top-0 z-50 header-shadow">
+            <!-- Top Bar -->
+            <div class="bg-slate-100 text-slate-600 text-xs py-2">
+                <div class="container mx-auto px-4 flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                       <a href="/admin" class="flex items-center space-x-1 hover:text-brand font-semibold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
+                            <span>Admin Login</span>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div th:if="${session.customer != null}" class="flex items-center space-x-2">
+                            <span class="text-slate-600">Welcome, <span th:text="${session.customer.firstName}" class="font-semibold text-brand"></span></span>
+                            <a href="/logout" class="text-slate-600 hover:text-brand text-sm">Logout</a>
+                        </div>
+                        <div th:unless="${session.customer != null}">
+                            <a href="/login" class="flex items-center space-x-1 hover:text-brand">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
+                                <span>User Login</span>
+                            </a>
+                        </div>
+                        <a href="#" class="flex items-center space-x-1 hover:text-brand">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>Deliver to Colombo</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Header -->
+            <div class="container mx-auto px-4 py-4 flex flex-wrap justify-between items-center">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-brand">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <span>SmartCart</span>
+                </a>
+                
+                <!-- Search Bar -->
+                <div class="w-full md:w-1/2 order-3 md:order-2 mt-4 md:mt-0 flex-grow">
+                    <div class="relative">
+                        <form th:action="@{/shopping/search}" method="get">
+                            <input type="text" name="q" placeholder="Search for products..." 
+                                   class="w-full px-4 py-2.5 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"/>
+                            <button type="submit" class="absolute right-0 top-0 h-full px-5 bg-brand text-white rounded-r-full flex items-center justify-center hover-bg-brand-dark">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="flex items-center space-x-4 order-2 md:order-3">
+                    <!-- Orders Button (only show when logged in) -->
+                    <a th:if="${isLoggedIn}" href="/orders" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        <span class="font-semibold">Orders</span>
+                    </a>
+                    
+                    <!-- Cart -->
+                    <a href="/cart" class="relative flex items-center space-x-2 bg-green-100 text-brand px-4 py-2 rounded-full hover:bg-green-200">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.5A4.5 4.5 0 0 0 17.5 5c-1.86 0-3.43 2.3-4.5 4-1.07-1.7-2.64-4-4.5-4A4.5 4.5 0 0 0 4 9.5c0 4.5 3 12.5 6 12.5 1.25 0 2.5-1.06 4-1.06Z"/><path d="M12 21.94c-1.5 0-2.75-1.06-4-1.06-3 0-6-8-6-12.5A4.5 4.5 0 0 1 6.5 5c1.86 0 3.43 2.3 4.5 4 1.07-1.7 2.64-4 4.5-4A4.5 4.5 0 0 1 20 9.5c0 4.5-3 12.5-6 12.5-1.25 0-2.5-1.06-4-1.06Z"/></svg>
+                        <span id="cart-total-price" class="font-semibold">LKR 0.00</span>
+                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center cart-count" style="display: none;">0</span>
+                    </a>
+                    
+                    <!-- User Menu (only show when logged in) -->
+                    <div th:if="${isLoggedIn}" class="relative">
+                        <button class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full hover:bg-slate-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
+                            <span class="font-semibold" th:text="${customer.username}">User</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Breadcrumb -->
+        <div class="bg-slate-50 py-3">
+            <div class="container mx-auto px-4">
+                <nav class="flex items-center space-x-2 text-sm text-slate-600">
+                    <a href="/" class="hover:text-brand">Home</a>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    <a href="/shopping" class="hover:text-brand">Products</a>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    <span th:text="${product.category}" class="text-slate-500"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    <span th:text="${product.name}" class="text-slate-800 font-medium"></span>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Product Details -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
+                    <!-- Product Image -->
+                    <div class="space-y-4">
+                        <div class="aspect-square bg-slate-50 rounded-xl overflow-hidden">
+                            <img th:src="${product.imageUrl}" 
+                                 th:alt="${product.name}"
+                                 class="w-full h-full object-contain"/>
+                        </div>
+                        
+                        <!-- Product Badges -->
+                        <div class="flex flex-wrap gap-2">
+                            <span th:if="${product.isInStock()}" 
+                                  class="bg-green-500 text-white text-sm px-3 py-1 rounded-full font-semibold">
+                                In Stock
+                            </span>
+                            <span th:unless="${product.isInStock()}" 
+                                  class="bg-red-500 text-white text-sm px-3 py-1 rounded-full font-semibold">
+                                Out of Stock
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Information -->
+                    <div class="space-y-6">
+                        <div>
+                            <h1 class="text-3xl font-bold text-slate-800 mb-2" th:text="${product.name}">Product Name</h1>
+                            <p class="text-slate-600 text-lg" th:text="${product.category}">Category</p>
+                        </div>
+                        
+                        <!-- Price -->
+                        <div class="space-y-2">
+                            <div class="flex items-baseline space-x-3">
+                                <span class="text-3xl font-bold text-brand" th:text="'LKR ' + ${product.price}">LKR 250.00</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div th:if="${product.description != null and !product.description.isEmpty()}">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-2">Description</h3>
+                            <p class="text-slate-600 leading-relaxed" th:text="${product.description}">Product description goes here...</p>
+                        </div>
+                        
+                        <!-- Stock Information -->
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-slate-600">Available Stock:</span>
+                                <span class="font-semibold" th:text="${product.stockQuantity}">50</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span th:if="${product.isInStock()}" 
+                                      class="text-sm text-green-600 font-medium flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1">
+                                        <path d="M20 6 9 17l-5-5"/>
+                                    </svg>
+                                    Available
+                                </span>
+                                <span th:unless="${product.isInStock()}" 
+                                      class="text-sm text-red-600 font-medium flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1">
+                                        <path d="M18 6 6 18"/>
+                                        <path d="m6 6 12 12"/>
+                                    </svg>
+                                    Not Available
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Quantity and Add to Cart -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Quantity</label>
+                                <div class="flex items-center space-x-3">
+                                    <button type="button" id="decrease-qty" 
+                                            class="w-10 h-10 border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            th:disabled="${!product.isInStock()}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                                    </button>
+                                    <input type="number" id="quantity" value="1" min="1" max="10" 
+                                           class="w-20 h-10 border border-slate-300 rounded-lg text-center font-semibold"
+                                           th:max="${product.stockQuantity}"
+                                           th:disabled="${!product.isInStock()}"/>
+                                    <button type="button" id="increase-qty" 
+                                            class="w-10 h-10 border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            th:disabled="${!product.isInStock()}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Total Price Display -->
+                            <div class="bg-slate-50 rounded-lg p-4 mb-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold text-slate-700">Total Price:</span>
+                                    <span id="total-price" class="text-2xl font-bold text-brand" th:text="'LKR ' + ${product.price}">LKR 250.00</span>
+                                </div>
+                            </div>
+                            
+                            <button id="add-to-cart" 
+                                    class="w-full bg-brand text-white font-semibold py-4 px-6 rounded-lg hover-bg-brand-dark flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    th:disabled="${!product.isInStock()}"
+                                    th:data-product-id="${product.id}"
+                                    th:data-product-name="${product.name}"
+                                    th:data-product-price="${product.price}"
+                                    th:data-product-image="${product.imageUrl}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                <span th:text="${product.isInStock()} ? 'Add to Cart' : 'Out of Stock'">Add to Cart</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Product Features -->
+                        <div class="border-t border-slate-200 pt-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Product Features</h3>
+                            <ul class="space-y-2 text-slate-600">
+                                <li class="flex items-center space-x-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6 9 17l-5-5"/></svg>
+                                    <span>Fresh and high quality</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6 9 17l-5-5"/></svg>
+                                    <span>Fast delivery available</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M20 6 9 17l-5-5"/></svg>
+                                    <span>Secure packaging</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Products -->
+            <div th:if="${relatedProducts != null and !relatedProducts.empty}" class="mt-12">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Related Products</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div th:each="relatedProduct : ${relatedProducts}" 
+                         class="bg-white border border-slate-200 rounded-xl p-4 text-center group transition-all hover:shadow-lg relative cursor-pointer"
+                         th:onclick="'window.location.href=\'/shopping/product/\' + ${relatedProduct.id}'">
+                        
+                        <img th:src="${relatedProduct.imageUrl}" th:alt="${relatedProduct.name}" 
+                             class="w-full h-40 object-contain mb-4 rounded-lg" />
+                        <p class="text-sm text-slate-500 mb-1" th:text="${relatedProduct.category}">Category</p>
+                        <h3 class="font-semibold text-slate-800 mb-2 h-12" th:text="${relatedProduct.name}">Product Name</h3>
+                        <div class="flex justify-center items-baseline space-x-2 mb-4">
+                            <span class="text-xl font-bold text-brand" th:text="'LKR ' + ${relatedProduct.price}">LKR 250.00</span>
+                        </div>
+                        
+                        <!-- Stock Status -->
+                        <div class="mb-3">
+                            <span th:if="${relatedProduct.isInStock()}" 
+                                  class="text-xs text-green-600 font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1"><path d="M20 6 9 17l-5-5"/></svg>
+                                In Stock
+                            </span>
+                            <span th:unless="${relatedProduct.isInStock()}" 
+                                  class="text-xs text-red-600 font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                Out of Stock
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-800 text-white py-12">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-brand mb-4">SmartCart</h3>
+                        <p class="text-slate-300">Your intelligent supermarket companion. Making grocery shopping smarter, faster, and more convenient.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4">Quick Links</h4>
+                        <ul class="space-y-2 text-slate-300">
+                            <li><a href="/shopping" class="hover:text-brand">Products</a></li>
+                            <li><a href="/cart" class="hover:text-brand">Cart</a></li>
+                            <li><a href="/about" class="hover:text-brand">About</a></li>
+                            <li><a href="/contact" class="hover:text-brand">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4">Account</h4>
+                        <ul class="space-y-2 text-slate-300">
+                            <li><a href="/login" class="hover:text-brand">Login</a></li>
+                            <li><a href="/register" class="hover:text-brand">Register</a></li>
+                            <li><a href="/profile" class="hover:text-brand">Profile</a></li>
+                            <li><a href="/orders" class="hover:text-brand">Orders</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4">Contact Info</h4>
+                        <div class="space-y-2 text-slate-300">
+                            <p>📧 info@smartcart.com</p>
+                            <p>📞 +94 11 123 4567</p>
+                            <p>📍 Colombo, Sri Lanka</p>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-8 border-slate-700">
+                <div class="text-center text-slate-400">
+                    <p>&copy; 2024 SmartCart. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript for product view functionality -->
+    <script>
+        // Cart functionality
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        
+        function updateCartCount() {
+            const cartCount = document.querySelector('.cart-count');
+            const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCount) {
+                cartCount.textContent = total;
+                cartCount.style.display = total > 0 ? 'flex' : 'none';
+            }
+        }
+        
+        function updateCartTotalPrice() {
+            const cartTotalElement = document.getElementById('cart-total-price');
+            const totalPrice = cart.reduce((sum, item) => {
+                return sum + (item.price * item.quantity);
+            }, 0);
+            
+            if (cartTotalElement) {
+                cartTotalElement.textContent = `LKR ${totalPrice.toFixed(2)}`;
+            }
+        }
+        
+        function addToCart(productId, productName, quantity = 1, price = 0, imageUrl = '') {
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({ 
+                    id: productId, 
+                    name: productName, 
+                    quantity: quantity,
+                    price: price,
+                    imageUrl: imageUrl
+                });
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            updateCartTotalPrice();
+            
+            // Show notification
+            showNotification(`${productName} (${quantity} ${quantity > 1 ? 'items' : 'item'}) added to cart!`, 'success');
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Quantity controls
+        function updateQuantity(change) {
+            const quantityInput = document.getElementById('quantity');
+            const currentValue = parseInt(quantityInput.value);
+            const maxValue = parseInt(quantityInput.max);
+            const newValue = Math.max(1, Math.min(maxValue, currentValue + change));
+            quantityInput.value = newValue;
+            updateTotalPrice(); // Update price when quantity changes
+        }
+        
+        // Update total price based on quantity
+        function updateTotalPrice() {
+            const quantityInput = document.getElementById('quantity');
+            const addToCartButton = document.getElementById('add-to-cart');
+            const totalPriceElement = document.getElementById('total-price');
+            
+            const quantity = parseInt(quantityInput.value);
+            const unitPrice = parseFloat(addToCartButton.dataset.productPrice);
+            const totalPrice = unitPrice * quantity;
+            
+            totalPriceElement.textContent = `LKR ${totalPrice.toFixed(2)}`;
+        }
+        
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+            updateCartTotalPrice();
+            
+            // Quantity controls
+            document.getElementById('decrease-qty').addEventListener('click', function() {
+                updateQuantity(-1);
+            });
+            
+            document.getElementById('increase-qty').addEventListener('click', function() {
+                updateQuantity(1);
+            });
+            
+            // Quantity input validation
+            document.getElementById('quantity').addEventListener('change', function() {
+                const value = parseInt(this.value);
+                const maxValue = parseInt(this.max);
+                if (value < 1) this.value = 1;
+                if (value > maxValue) this.value = maxValue;
+                updateTotalPrice(); // Update price when quantity changes
+            });
+            
+            // Initialize total price on page load
+            updateTotalPrice();
+            
+            // Add to cart button
+            document.getElementById('add-to-cart').addEventListener('click', function() {
+                if (this.disabled) return;
+                
+                const productId = this.dataset.productId;
+                const productName = this.dataset.productName;
+                const productPrice = parseFloat(this.dataset.productPrice);
+                const productImage = this.dataset.productImage;
+                const quantity = parseInt(document.getElementById('quantity').value);
+                
+                addToCart(productId, productName, quantity, productPrice, productImage);
+            });
+        });
+    </script>
+</body>
+</html>

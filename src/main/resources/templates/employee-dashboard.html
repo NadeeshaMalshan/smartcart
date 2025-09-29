@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">SmartCart - Employee Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600" th:text="${employee.empid} + ' (' + ${employeeType} + ')'"></span>
+                    <a href="/employee/logout" class="text-slate-500 hover:text-brand">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            
+            <!-- Welcome Section -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h1 class="text-2xl font-bold text-slate-800 mb-2">Welcome to Employee Dashboard</h1>
+                    <p class="text-slate-600">Employee ID: <span th:text="${employee.empid}" class="font-semibold"></span></p>
+                    <p class="text-slate-600">Role: <span th:text="${employee.type.displayName}" class="font-semibold"></span></p>
+                </div>
+            </div>
+
+            <!-- Role-specific Dashboard Access -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Cashier Dashboard -->
+                <div th:if="${employee.type.name() == 'CASHIER'}" class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6 text-center">
+                        <h3 class="text-lg font-medium text-slate-800 mb-4">Cashier Dashboard</h3>
+                        <p class="text-slate-600 mb-4">Access your specialized cashier tools and functions</p>
+                        <a href="/employee/cashier-dashboard" class="block w-full bg-blue-500 text-white text-center py-3 px-4 rounded hover:bg-blue-600 transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                            Open Cashier Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Store Manager Dashboard -->
+                <div th:if="${employee.type.name() == 'STORE_MANAGER'}" class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6 text-center">
+                        <h3 class="text-lg font-medium text-slate-800 mb-4">Store Manager Dashboard</h3>
+                        <p class="text-slate-600 mb-4">Manage products, inventory, and staff operations</p>
+                        <a href="/employee/store-manager-dashboard" class="block w-full bg-green-500 text-white text-center py-3 px-4 rounded hover:bg-green-600 transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Open Manager Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- IT Assistant Dashboard -->
+                <div th:if="${employee.type.name() == 'IT_ASSISTANT'}" class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6 text-center">
+                        <h3 class="text-lg font-medium text-slate-800 mb-4">IT Assistant Dashboard</h3>
+                        <p class="text-slate-600 mb-4">Monitor systems and provide technical support</p>
+                        <a href="/employee/it-assistant-dashboard" class="block w-full bg-purple-500 text-white text-center py-3 px-4 rounded hover:bg-purple-600 transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            Open IT Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Delivery Coordinator Dashboard -->
+                <div th:if="${employee.type.name() == 'DELIVERY_COORDINATOR'}" class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6 text-center">
+                        <h3 class="text-lg font-medium text-slate-800 mb-4">Delivery Coordinator Dashboard</h3>
+                        <p class="text-slate-600 mb-4">Coordinate deliveries and manage logistics</p>
+                        <a href="/employee/delivery-coordinator-dashboard" class="block w-full bg-orange-500 text-white text-center py-3 px-4 rounded hover:bg-orange-600 transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                            Open Delivery Dashboard
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mt-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-slate-800 mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="/" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-center py-3 px-4 rounded-lg transition-colors">Home</a>
+                        <a href="/shopping" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-center py-3 px-4 rounded-lg transition-colors">Shopping</a>
+                        <a href="/cart" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-center py-3 px-4 rounded-lg transition-colors">Cart</a>
+                        <a href="/employee/logout" class="bg-red-100 hover:bg-red-200 text-red-700 text-center py-3 px-4 rounded-lg transition-colors">Logout</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
