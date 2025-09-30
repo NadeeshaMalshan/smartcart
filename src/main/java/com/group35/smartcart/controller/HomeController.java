@@ -26,4 +26,15 @@ public class HomeController {
     public String homePage(Model model, HttpSession session) {
         return home(model, session);
     }
+
+    @GetMapping("/deliver-person-management")
+    public String deliveryPersonManagement(){
+        return "deliver-person-management";
+    }
+
+    @GetMapping("/deliver-assigment-management")
+    public String deliveryAssigmentManagement(){
+        return "deliver-assigment-management";
+    }
+
 }
