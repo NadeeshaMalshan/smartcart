@@ -157,7 +157,7 @@
                             <div>
                                 <h4 class="font-semibold text-slate-700 mb-2">Products Ordered</h4>
                                 <div class="text-sm text-slate-600">
-                                    <div th:text="${order.productIds}" class="mb-1">Product Names</div>
+                                    <div th:text="${order.productIds}" class="mb-1">Product Names with Stock</div>
                                     <div class="text-xs text-slate-500">
                                         <span>Quantities: </span><span th:text="${order.productQuantities}">2,1,3</span>
                                     </div>
@@ -181,13 +181,33 @@
 
                     <!-- Order Actions -->
                     <div class="border-t pt-4 mt-4 flex justify-end">
-                        <button class="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors">
+                        <button th:onclick="'viewOrderDetails(' + ${order.paymentId} + ')'" 
+                                class="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors">
                             View Details
                         </button>
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- Order Details Modal -->
+        <div id="orderModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">Order Details</h3>
+                        <button onclick="closeOrderModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="orderModalContent">
+                        <!-- Modal content will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="bg-slate-800 text-white py-12 mt-16">
@@ -253,6 +273,163 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
         });
+        
+        // Order details modal functionality
+        function viewOrderDetails(paymentId) {
+            const modal = document.getElementById('orderModal');
+            const content = document.getElementById('orderModalContent');
+            
+            // Show loading state
+            content.innerHTML = `
+                <div class="flex justify-center items-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                    <span class="ml-2 text-gray-600">Loading order details...</span>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            
+            // Fetch bill information
+            fetch(`/get-order-bill/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showBillInModal(data.data, paymentId);
+                    } else {
+                        showErrorInModal(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching order details:', error);
+                    showErrorInModal('Failed to load order details');
+                });
+        }
+        
+        function showBillInModal(bill, paymentId) {
+            const content = document.getElementById('orderModalContent');
+            const formattedDate = new Date(bill.createdAt).toLocaleDateString() + ' ' + new Date(bill.createdAt).toLocaleTimeString();
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Order Information -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Order Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Order ID</label>
+                                <p class="mt-1 text-sm text-gray-900 font-mono">#${paymentId}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Status</label>
+                                <p class="mt-1"><span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">APPROVED</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bill Information -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Bill Information
+                        </h4>
+                        <div class="bg-white rounded-lg p-4 border border-green-200">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700">Bill ID</label>
+                                    <p class="mt-1 text-sm text-green-900 font-mono">#${bill.id}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700">Payment ID</label>
+                                    <p class="mt-1 text-sm text-green-900 font-mono">#${bill.paymentId}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700">Bank Name</label>
+                                    <p class="mt-1 text-sm text-green-900 font-medium">${bill.bankName}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700">Account Number</label>
+                                    <p class="mt-1 text-sm text-green-900 font-mono">${bill.maskedAccountNumber}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t pt-4">
+                                <h5 class="font-semibold text-green-900 mb-3">Order Details</h5>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-green-700">Products:</span>
+                                        <span class="text-green-900 font-medium">${bill.productNames}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-green-700">Quantities:</span>
+                                        <span class="text-green-900 font-medium">${bill.productQuantities}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-green-700">Subtotal:</span>
+                                        <span class="text-green-900 font-medium">$${parseFloat(bill.subtotal).toFixed(2)}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                        <span class="text-green-700">Total Amount:</span>
+                                        <span class="text-green-900">$${parseFloat(bill.total).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t pt-4 mt-4">
+                                <p class="text-xs text-green-600 mb-4">
+                                    Bill generated on: ${formattedDate}
+                                </p>
+                                <div class="text-center">
+                                    <button onclick="downloadBillPdf(${paymentId})" 
+                                            class="bg-brand text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center mx-auto">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Save as PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showErrorInModal(message) {
+            const content = document.getElementById('orderModalContent');
+            content.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Unable to Load Order Details</h3>
+                    <p class="text-gray-600 mb-4">${message}</p>
+                    <button onclick="closeOrderModal()" class="bg-brand text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        Close
+                    </button>
+                </div>
+            `;
+        }
+        
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+        
+        function downloadBillPdf(paymentId) {
+            // Create a temporary link to download the PDF
+            const link = document.createElement('a');
+            link.href = `/download-bill-pdf/${paymentId}`;
+            link.download = `bill_${paymentId}.pdf`;
+            link.target = '_blank';
+            
+            // Add to DOM, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 </body>
 </html>

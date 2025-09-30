@@ -4,15 +4,21 @@ import com.group35.smartcart.entity.Customer;
 import com.group35.smartcart.entity.CustomerPayment;
 import com.group35.smartcart.entity.Order;
 import com.group35.smartcart.entity.Product;
+import com.group35.smartcart.entity.Bill;
 import com.group35.smartcart.repository.CustomerPaymentRepository;
 import com.group35.smartcart.repository.OrderRepository;
 import com.group35.smartcart.repository.ProductRepository;
+import com.group35.smartcart.repository.BillRepository;
+import com.group35.smartcart.service.PdfService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +41,12 @@ public class CartController {
     
     @Autowired
     private ProductRepository productRepository;
+    
+    @Autowired
+    private BillRepository billRepository;
+    
+    @Autowired
+    private PdfService pdfService;
     
     @GetMapping("/cart")
     public String cartPage(Model model, HttpSession session) {
@@ -274,10 +286,10 @@ public class CartController {
         // Get all orders for the customer
         List<Order> orders = orderRepository.findByUsernameOrderByCreatedAtDesc(customer.getUsername());
         
-        // Convert product IDs to product names for each order
+        // Convert product IDs to product names and add stock information for each order
         for (Order order : orders) {
-            String productNames = convertProductIdsToNames(order.getProductIds());
-            order.setProductIds(productNames); // Reuse the field to store names instead of IDs
+            String productInfo = convertProductIdsToNamesWithStock(order.getProductIds());
+            order.setProductIds(productInfo); // Reuse the field to store names with stock info
         }
         
         model.addAttribute("title", "SmartCart - My Orders");
@@ -322,6 +334,148 @@ public class CartController {
         }
         
         return productNames.toString();
+    }
+    
+    /**
+     * Helper method to convert comma-separated product IDs to product names with stock information
+     */
+    private String convertProductIdsToNamesWithStock(String productIds) {
+        if (productIds == null || productIds.trim().isEmpty()) {
+            return "No products";
+        }
+        
+        String[] ids = productIds.split(",");
+        StringBuilder productInfo = new StringBuilder();
+        
+        for (int i = 0; i < ids.length; i++) {
+            try {
+                Long productId = Long.parseLong(ids[i].trim());
+                Optional<Product> product = productRepository.findById(productId);
+                if (product.isPresent()) {
+                    Product p = product.get();
+                    productInfo.append(p.getName());
+                    productInfo.append(" (Stock: ").append(p.getStockQuantity() != null ? p.getStockQuantity() : 0).append(")");
+                } else {
+                    productInfo.append("Unknown Product (ID: ").append(productId).append(")");
+                }
+                
+                // Add comma separator except for the last item
+                if (i < ids.length - 1) {
+                    productInfo.append(", ");
+                }
+            } catch (NumberFormatException e) {
+                productInfo.append("Invalid Product ID: ").append(ids[i].trim());
+                if (i < ids.length - 1) {
+                    productInfo.append(", ");
+                }
+            }
+        }
+        
+        return productInfo.toString();
+    }
+    
+    @GetMapping("/get-order-bill/{paymentId}")
+    @ResponseBody
+    public String getOrderBill(@PathVariable Long paymentId, HttpSession session) {
+        try {
+            // Check if user is logged in
+            Customer customer = (Customer) session.getAttribute("customer");
+            if (customer == null) {
+                return "{\"success\": false, \"message\": \"User not logged in\"}";
+            }
+            
+            // Get the order to verify ownership
+            Optional<Order> orderOpt = orderRepository.findById(paymentId);
+            if (!orderOpt.isPresent()) {
+                return "{\"success\": false, \"message\": \"Order not found\"}";
+            }
+            
+            Order order = orderOpt.get();
+            if (!order.getUsername().equals(customer.getUsername())) {
+                return "{\"success\": false, \"message\": \"Unauthorized access\"}";
+            }
+            
+            // Check if order is approved
+            if (!"APPROVED".equals(order.getOrderStatus())) {
+                return "{\"success\": false, \"message\": \"Bill not available for non-approved orders\"}";
+            }
+            
+            // Get bill information
+            Optional<Bill> billOpt = billRepository.findByPaymentId(paymentId);
+            if (!billOpt.isPresent()) {
+                return "{\"success\": false, \"message\": \"Bill not found\"}";
+            }
+            
+            Bill bill = billOpt.get();
+            
+            return "{\"success\": true, \"message\": \"Bill retrieved\", \"data\": {" +
+                   "\"id\": " + bill.getId() + "," +
+                   "\"paymentId\": " + bill.getPaymentId() + "," +
+                   "\"productNames\": \"" + bill.getProductNames() + "\"," +
+                   "\"productQuantities\": \"" + bill.getProductQuantities() + "\"," +
+                   "\"subtotal\": " + bill.getSubtotal() + "," +
+                   "\"total\": " + bill.getTotal() + "," +
+                   "\"bankName\": \"" + bill.getBankName() + "\"," +
+                   "\"maskedAccountNumber\": \"" + bill.getMaskedAccountNumber() + "\"," +
+                   "\"createdAt\": \"" + bill.getCreatedAt() + "\"" +
+                   "}}";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{\"success\": false, \"message\": \"Failed to retrieve bill\"}";
+        }
+    }
+    
+    @GetMapping("/download-bill-pdf/{paymentId}")
+    public ResponseEntity<byte[]> downloadBillPdf(@PathVariable Long paymentId, HttpSession session) {
+        try {
+            // Check if user is logged in
+            Customer customer = (Customer) session.getAttribute("customer");
+            if (customer == null) {
+                return ResponseEntity.status(401).build();
+            }
+            
+            // Get the order to verify ownership
+            Optional<Order> orderOpt = orderRepository.findById(paymentId);
+            if (!orderOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Order order = orderOpt.get();
+            if (!order.getUsername().equals(customer.getUsername())) {
+                return ResponseEntity.status(403).build();
+            }
+            
+            // Check if order is approved
+            if (!"APPROVED".equals(order.getOrderStatus())) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Get bill information
+            Optional<Bill> billOpt = billRepository.findByPaymentId(paymentId);
+            if (!billOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Bill bill = billOpt.get();
+            
+            // Generate PDF
+            byte[] pdfBytes = pdfService.generateBillPdf(bill);
+            
+            // Set headers for PDF download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "bill_" + bill.getId() + ".pdf");
+            headers.setContentLength(pdfBytes.length);
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdfBytes);
+                    
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
     
     @GetMapping("/get-customer-payment-details")
