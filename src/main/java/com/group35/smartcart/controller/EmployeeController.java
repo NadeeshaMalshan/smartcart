@@ -295,6 +295,17 @@ public class EmployeeController {
             Optional<Order> orderOpt = orderRepository.findById(paymentId);
             if (orderOpt.isPresent()) {
                 Order order = orderOpt.get();
+                
+                // Stock validation: If trying to approve and any product has zero stock, prevent approval
+                if ("APPROVED".equals(status.toUpperCase())) {
+                    String stockValidationResult = validateStockAvailability(order);
+                    if (stockValidationResult != null) {
+                        response.put("success", false);
+                        response.put("message", stockValidationResult);
+                        return response;
+                    }
+                }
+                
                 order.setOrderStatus(status.toUpperCase());
                 order.setUpdatedAt(LocalDateTime.now());
                 orderRepository.save(order);
@@ -310,6 +321,100 @@ public class EmployeeController {
             e.printStackTrace();
             response.put("success", false);
             response.put("message", "Failed to update payment status");
+        }
+        
+        return response;
+    }
+    
+    /**
+     * Validates stock availability for all products in an order
+     * @param order The order to validate
+     * @return null if validation passes, error message if validation fails
+     */
+    private String validateStockAvailability(Order order) {
+        try {
+            String productIds = order.getProductIds();
+            String productQuantities = order.getProductQuantities();
+            
+            if (productIds == null || productIds.trim().isEmpty() || 
+                productQuantities == null || productQuantities.trim().isEmpty()) {
+                return "Invalid order data";
+            }
+            
+            String[] ids = productIds.split(",");
+            String[] quantities = productQuantities.split(",");
+            
+            if (ids.length != quantities.length) {
+                return "Mismatch between product IDs and quantities";
+            }
+            
+            for (int i = 0; i < ids.length; i++) {
+                try {
+                    Long productId = Long.parseLong(ids[i].trim());
+                    int requestedQuantity = Integer.parseInt(quantities[i].trim());
+                    
+                    Optional<Product> productOpt = productRepository.findById(productId);
+                    if (productOpt.isPresent()) {
+                        Product product = productOpt.get();
+                        if (product.getStockQuantity() == null || product.getStockQuantity() <= 0) {
+                            return "Cannot approve payment: Product '" + product.getName() + "' is out of stock (quantity: 0)";
+                        }
+                        if (product.getStockQuantity() < requestedQuantity) {
+                            return "Cannot approve payment: Insufficient stock for product '" + product.getName() + 
+                                   "' (requested: " + requestedQuantity + ", available: " + product.getStockQuantity() + ")";
+                        }
+                    } else {
+                        return "Product with ID " + productId + " not found";
+                    }
+                } catch (NumberFormatException e) {
+                    return "Invalid product ID or quantity format";
+                }
+            }
+            
+            return null; // Validation passed
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error validating stock availability";
+        }
+    }
+    
+    // Check stock availability for a payment
+    @GetMapping("/api/payments/{paymentId}/stock-check")
+    @ResponseBody
+    public Map<String, Object> checkStockAvailability(@PathVariable Long paymentId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.CASHIER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Optional<Order> orderOpt = orderRepository.findById(paymentId);
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                String stockValidationResult = validateStockAvailability(order);
+                
+                if (stockValidationResult == null) {
+                    response.put("success", true);
+                    response.put("canApprove", true);
+                    response.put("message", "All products have sufficient stock");
+                } else {
+                    response.put("success", true);
+                    response.put("canApprove", false);
+                    response.put("message", stockValidationResult);
+                }
+            } else {
+                response.put("success", false);
+                response.put("message", "Payment not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to check stock availability");
         }
         
         return response;
