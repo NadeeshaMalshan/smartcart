@@ -54,121 +54,55 @@
                 </div>
             </div>
 
-            <!-- IT Management Functions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- System Monitoring -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-slate-800 mb-4">System Monitoring</h3>
-                        <div class="space-y-3">
-                            <a href="/system/status" class="block w-full bg-green-500 text-white text-center py-3 px-4 rounded hover:bg-green-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                System Status
-                            </a>
-                            <a href="/system/performance" class="block w-full bg-blue-500 text-white text-center py-3 px-4 rounded hover:bg-blue-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                Performance Metrics
-                            </a>
-                            <a href="/system/logs" class="block w-full bg-purple-500 text-white text-center py-3 px-4 rounded hover:bg-purple-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                System Logs
-                            </a>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- User Support -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-slate-800 mb-4">User Support</h3>
-                        <div class="space-y-3">
-                            <a href="/support/tickets" class="block w-full bg-orange-500 text-white text-center py-3 px-4 rounded hover:bg-orange-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Support Tickets
-                            </a>
-                            <a href="/support/remote" class="block w-full bg-teal-500 text-white text-center py-3 px-4 rounded hover:bg-teal-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
-                                Remote Support
-                            </a>
-                            <a href="/support/knowledge" class="block w-full bg-indigo-500 text-white text-center py-3 px-4 rounded hover:bg-indigo-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                </svg>
-                                Knowledge Base
-                            </a>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- System Maintenance -->
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-slate-800 mb-4">System Maintenance</h3>
-                        <div class="space-y-3">
-                            <a href="/maintenance/backup" class="block w-full bg-red-500 text-white text-center py-3 px-4 rounded hover:bg-red-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                                </svg>
-                                Backup Systems
-                            </a>
-                            <a href="/maintenance/update" class="block w-full bg-yellow-500 text-white text-center py-3 px-4 rounded hover:bg-yellow-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                                System Updates
-                            </a>
-                            <a href="/maintenance/security" class="block w-full bg-gray-500 text-white text-center py-3 px-4 rounded hover:bg-gray-600 transition-colors">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                </svg>
-                                Security Scan
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Network & Infrastructure -->
+            <!-- Employee Management -->
             <div class="bg-white overflow-hidden shadow rounded-lg mt-6">
                 <div class="px-4 py-5 sm:p-6">
-                    <h3 class="text-lg font-medium text-slate-800 mb-4">Network & Infrastructure</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <a href="/network/monitor" class="bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-3 px-4 rounded-lg transition-colors">
-                            <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                            Network Monitor
-                        </a>
-                        <a href="/network/devices" class="bg-green-100 hover:bg-green-200 text-green-700 text-center py-3 px-4 rounded-lg transition-colors">
-                            <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            Device Management
-                        </a>
-                        <a href="/network/wifi" class="bg-purple-100 hover:bg-purple-200 text-purple-700 text-center py-3 px-4 rounded-lg transition-colors">
-                            <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-                            </svg>
-                            WiFi Management
-                        </a>
-                        <a href="/network/printer" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-3 px-4 rounded-lg transition-colors">
-                            <svg class="w-6 h-6 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                            </svg>
-                            Printer Setup
-                        </a>
+                    <h3 class="text-lg font-medium text-slate-800 mb-4">Employee Management</h3>
+                    
+                    <!-- Add Employee Form -->
+                    <div class="mb-6 p-4 bg-slate-50 rounded-lg">
+                        <h4 class="text-md font-medium text-slate-700 mb-3">Add New Employee</h4>
+                        <form id="addEmployeeForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="empid" class="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
+                                <input type="text" id="empid" name="empid" required 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., EMP003">
+                            </div>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                <input type="password" id="password" name="password" required 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="Min 6 characters">
+                            </div>
+                            <div>
+                                <label for="type" class="block text-sm font-medium text-slate-700 mb-1">Employee Type</label>
+                                <select id="type" name="type" required 
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <option value="">Select Type</option>
+                                    <option value="CASHIER">Cashier</option>
+                                    <option value="STORE_MANAGER">Store Manager</option>
+                                    <option value="IT_ASSISTANT">IT Assistant</option>
+                                    <option value="DELIVERY_COORDINATOR">Delivery Coordinator</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" 
+                                        class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                                    Add Employee
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Employee List -->
+                    <div>
+                        <h4 class="text-md font-medium text-slate-700 mb-3">Employee List</h4>
+                        <div id="employeeList" class="space-y-3">
+                            <!-- Employee list will be loaded here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -188,6 +122,164 @@
 
         </div>
     </div>
+
+    <!-- JavaScript for Employee Management -->
+    <script>
+        // Load employees on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEmployees();
+        });
+
+        // Add employee form submission
+        document.getElementById('addEmployeeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const empid = formData.get('empid');
+            const password = formData.get('password');
+            const type = formData.get('type');
+            
+            // Basic validation
+            if (!empid || !password || !type) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            // Submit to server
+            fetch('/api/employees', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `empid=${encodeURIComponent(empid)}&password=${encodeURIComponent(password)}&type=${encodeURIComponent(type)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    this.reset();
+                    loadEmployees(); // Reload the employee list
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Failed to add employee', 'error');
+            });
+        });
+
+        // Load employees from server
+        function loadEmployees() {
+            fetch('/api/employees')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayEmployees(data.employees);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Failed to load employees', 'error');
+            });
+        }
+
+        // Display employees in the UI
+        function displayEmployees(employees) {
+            const employeeList = document.getElementById('employeeList');
+            
+            if (employees.length === 0) {
+                employeeList.innerHTML = '<p class="text-slate-500 text-center py-4">No employees found</p>';
+                return;
+            }
+            
+            employeeList.innerHTML = employees.map(emp => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border ${emp.isActive ? 'border-slate-200' : 'border-red-200 bg-red-50'}">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-4">
+                            <div>
+                                <h5 class="font-medium text-slate-800">${emp.empid}</h5>
+                                <p class="text-sm text-slate-600">${emp.type}</p>
+                            </div>
+                            <div class="text-xs text-slate-500">
+                                <p>Created: ${new Date(emp.createdAt).toLocaleDateString()}</p>
+                                ${emp.updatedAt ? `<p>Updated: ${new Date(emp.updatedAt).toLocaleDateString()}</p>` : ''}
+                            </div>
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 text-xs rounded-full ${emp.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${emp.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        ${emp.isActive ? `
+                            <button onclick="deleteEmployee('${emp.empid}')" 
+                                    class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                                Delete
+                            </button>
+                        ` : `
+                            <span class="px-3 py-1 text-sm text-slate-500">Deleted</span>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Delete employee
+        function deleteEmployee(empid) {
+            if (!confirm(`Are you sure you want to delete employee ${empid}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            fetch(`/api/employees/${empid}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    loadEmployees(); // Reload the employee list
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Failed to delete employee', 'error');
+            });
+        }
+
+        // Show message to user
+        function showMessage(message, type) {
+            // Remove existing messages
+            const existingMessages = document.querySelectorAll('.message-alert');
+            existingMessages.forEach(msg => msg.remove());
+            
+            // Create new message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-alert fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
 
 </body>
 </html>
