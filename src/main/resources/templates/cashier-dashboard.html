@@ -87,6 +87,13 @@
         .btn-declined:hover {
             background-color: #fecaca;
         }
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-delete:hover {
+            background-color: #fecaca;
+        }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -135,6 +142,66 @@
                                 </svg>
                                 Back to Dashboard
                             </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Statistics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Total Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="totalOrders">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Pending Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="pendingOrders">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Approved Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="approvedOrders">-</dd>
+                                </dl>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,10 +281,37 @@
     </div>
 
     <script>
-        // Load payments on page load
+        // Load payments and summary on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadOrderSummary();
             loadPayments();
         });
+
+        function loadOrderSummary() {
+            fetch('/api/order-summary')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const summary = data.summary;
+                        document.getElementById('totalOrders').textContent = summary.totalOrders || 0;
+                        document.getElementById('pendingOrders').textContent = summary.pendingOrders || 0;
+                        document.getElementById('approvedOrders').textContent = summary.approvedOrders || 0;
+                    } else {
+                        console.error('Failed to load order summary:', data.message);
+                        // Set default values on error
+                        document.getElementById('totalOrders').textContent = '0';
+                        document.getElementById('pendingOrders').textContent = '0';
+                        document.getElementById('approvedOrders').textContent = '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading order summary:', error);
+                    // Set default values on error
+                    document.getElementById('totalOrders').textContent = '0';
+                    document.getElementById('pendingOrders').textContent = '0';
+                    document.getElementById('approvedOrders').textContent = '0';
+                });
+        }
 
         function loadPayments() {
             showLoading();
@@ -449,10 +543,19 @@
                             `}
                         </div>
                         
-                        <button onclick="viewPaymentDetails(${payment.paymentId})" 
-                                class="w-full bg-brand hover:bg-brand-dark text-white py-2 px-4 rounded-lg transition-colors">
-                            View Details
-                        </button>
+                        <div class="flex space-x-2">
+                            <button onclick="viewPaymentDetails(${payment.paymentId})" 
+                                    class="flex-1 bg-brand hover:bg-brand-dark text-white py-2 px-4 rounded-lg transition-colors">
+                                View Details
+                            </button>
+                            <button onclick="deleteOrder(${payment.paymentId})" 
+                                    class="status-update-btn btn-delete px-3 py-2" 
+                                    title="Delete Order">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -778,7 +881,33 @@
         }
 
         function refreshPayments() {
+            loadOrderSummary();
             loadPayments();
+        }
+
+        function deleteOrder(orderId) {
+            if (!confirm(`Are you sure you want to delete Order #${orderId}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            fetch(`/api/payments/${orderId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Order #${orderId} deleted successfully`, 'success');
+                    // Refresh the payments and summary to show updated data
+                    loadOrderSummary();
+                    loadPayments();
+                } else {
+                    showNotification(data.message || 'Failed to delete order', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting order:', error);
+                showNotification('Network error. Please try again.', 'error');
+            });
         }
 
         function updatePaymentStatus(paymentId, newStatus) {
@@ -797,7 +926,8 @@
             .then(data => {
                 if (data.success) {
                     showNotification(`Payment status updated to ${newStatus}`, 'success');
-                    // Refresh the payments to show updated status
+                    // Refresh the payments and summary to show updated status
+                    loadOrderSummary();
                     loadPayments();
                 } else {
                     showNotification(data.message || 'Failed to update payment status', 'error');
@@ -825,8 +955,9 @@
             .then(data => {
                 if (data.success) {
                     showNotification(`Payment status updated to ${newStatus}`, 'success');
-                    // Close modal and refresh payments
+                    // Close modal and refresh payments and summary
                     closePaymentModal();
+                    loadOrderSummary();
                     loadPayments();
                 } else {
                     showNotification(data.message || 'Failed to update payment status', 'error');

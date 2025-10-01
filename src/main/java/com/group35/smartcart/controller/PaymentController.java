@@ -6,6 +6,7 @@ import com.group35.smartcart.entity.Order;
 import com.group35.smartcart.entity.Bill;
 import com.group35.smartcart.repository.CustomerPaymentRepository;
 import com.group35.smartcart.repository.OrderRepository;
+import com.group35.smartcart.repository.ProductRepository;
 import com.group35.smartcart.repository.BillRepository;
 import com.group35.smartcart.service.PdfService;
 import jakarta.servlet.http.HttpSession;
@@ -35,6 +36,9 @@ public class PaymentController {
     
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private ProductRepository productRepository;
     
     @Autowired
     private BillRepository billRepository;
