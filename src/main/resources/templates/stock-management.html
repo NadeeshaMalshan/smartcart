@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management - SmartCart</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600" th:text="${employee.empid} + ' (Store Manager)'"></span>
+                    <a href="/employee/store-manager-dashboard" class="text-slate-500 hover:text-brand">Dashboard</a>
+                    <a href="/employee/logout" class="text-slate-500 hover:text-brand">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            
+            <!-- Header -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 mb-2">Stock Management</h1>
+                            <p class="text-slate-600">Manage inventory levels for all products</p>
+                        </div>
+                        <button onclick="refreshStock()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Management Table -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Stock data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add Stock Modal -->
+    <div id="addStockModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Add Stock</h3>
+                    <button onclick="closeAddStockModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="addStockForm">
+                    <input type="hidden" id="addProductId" name="productId">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                        <input type="text" id="addProductName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Stock</label>
+                        <input type="text" id="addCurrentStock" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label for="addQuantity" class="block text-sm font-medium text-gray-700 mb-2">Quantity to Add</label>
+                        <input type="number" id="addQuantity" name="quantity" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeAddStockModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors">
+                            Add Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Stock Modal -->
+    <div id="deleteStockModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Delete Stock</h3>
+                    <button onclick="closeDeleteStockModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="deleteStockForm">
+                    <input type="hidden" id="deleteProductId" name="productId">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                        <input type="text" id="deleteProductName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Stock</label>
+                        <input type="text" id="deleteCurrentStock" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label for="deleteQuantity" class="block text-sm font-medium text-gray-700 mb-2">Quantity to Delete</label>
+                        <input type="number" id="deleteQuantity" name="quantity" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" required>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeDeleteStockModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors">
+                            Delete Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // Load stock data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStockData();
+        });
+
+        // Load stock data from server
+        function loadStockData() {
+            fetch('/api/stock/all')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayStockData(data.products);
+                    } else {
+                        showMessage('Error loading stock data: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error loading stock data', 'error');
+                });
+        }
+
+        // Display stock data in table
+        function displayStockData(products) {
+            const tbody = document.getElementById('stockTableBody');
+            tbody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const statusBadge = product.isInStock ? 
+                    '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>' :
+                    '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Out of Stock</span>';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.productId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.productName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.category || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs.${product.price}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.currentStock}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="openAddStockModal(${product.productId}, '${product.productName}', ${product.currentStock})" 
+                                class="text-green-600 hover:text-green-900 mr-3">Add</button>
+                        <button onclick="openDeleteStockModal(${product.productId}, '${product.productName}', ${product.currentStock})" 
+                                class="text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Open add stock modal
+        function openAddStockModal(productId, productName, currentStock) {
+            document.getElementById('addProductId').value = productId;
+            document.getElementById('addProductName').value = productName;
+            document.getElementById('addCurrentStock').value = currentStock;
+            document.getElementById('addQuantity').value = '';
+            document.getElementById('addStockModal').classList.remove('hidden');
+        }
+
+        // Close add stock modal
+        function closeAddStockModal() {
+            document.getElementById('addStockModal').classList.add('hidden');
+        }
+
+        // Open delete stock modal
+        function openDeleteStockModal(productId, productName, currentStock) {
+            document.getElementById('deleteProductId').value = productId;
+            document.getElementById('deleteProductName').value = productName;
+            document.getElementById('deleteCurrentStock').value = currentStock;
+            document.getElementById('deleteQuantity').value = '';
+            document.getElementById('deleteQuantity').max = currentStock;
+            document.getElementById('deleteStockModal').classList.remove('hidden');
+        }
+
+        // Close delete stock modal
+        function closeDeleteStockModal() {
+            document.getElementById('deleteStockModal').classList.add('hidden');
+        }
+
+        // Handle add stock form submission
+        document.getElementById('addStockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('addProductId').value;
+            const quantity = document.getElementById('addQuantity').value;
+            
+            const formData = new FormData();
+            formData.append('productId', productId);
+            formData.append('quantity', quantity);
+            
+            fetch('/api/stock/add', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`Stock added successfully! ${data.addedQuantity} units added to ${data.productName}. New stock: ${data.newStock}`, 'success');
+                    closeAddStockModal();
+                    loadStockData();
+                } else {
+                    showMessage('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error adding stock', 'error');
+            });
+        });
+
+        // Handle delete stock form submission
+        document.getElementById('deleteStockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('deleteProductId').value;
+            const quantity = document.getElementById('deleteQuantity').value;
+            
+            const formData = new FormData();
+            formData.append('productId', productId);
+            formData.append('quantity', quantity);
+            
+            fetch('/api/stock/delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`Stock deleted successfully! ${data.deletedQuantity} units removed from ${data.productName}. New stock: ${data.newStock}`, 'success');
+                    closeDeleteStockModal();
+                    loadStockData();
+                } else {
+                    showMessage('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error deleting stock', 'error');
+            });
+        });
+
+        // Refresh stock data
+        function refreshStock() {
+            loadStockData();
+            showMessage('Stock data refreshed', 'success');
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const textColor = 'text-white';
+            
+            messageDiv.className = `${bgColor} ${textColor} px-6 py-3 rounded-lg shadow-lg mb-2 max-w-md`;
+            messageDiv.textContent = message;
+            
+            container.appendChild(messageDiv);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            const addModal = document.getElementById('addStockModal');
+            const deleteModal = document.getElementById('deleteStockModal');
+            
+            if (event.target === addModal) {
+                closeAddStockModal();
+            }
+            if (event.target === deleteModal) {
+                closeDeleteStockModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product - SmartCart</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600" th:text="${employee.empid} + ' (Store Manager)'"></span>
+                    <a href="/employee/store-manager-dashboard" class="text-slate-500 hover:text-brand">Dashboard</a>
+                    <a href="/employee/logout" class="text-slate-500 hover:text-brand">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            
+            <!-- Header -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 mb-2">Add New Product</h1>
+                            <p class="text-slate-600">Add a new product to the store inventory</p>
+                        </div>
+                        <a href="/employee/store-manager-dashboard" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Product Form -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <form id="addProductForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- Product Name -->
+                            <div class="md:col-span-2">
+                                <label for="productName" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Product Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="productName" name="name" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Enter product name">
+                            </div>
+
+                            <!-- Description -->
+                            <div class="md:col-span-2">
+                                <label for="productDescription" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Description
+                                </label>
+                                <textarea id="productDescription" name="description" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          placeholder="Enter product description"></textarea>
+                            </div>
+
+                            <!-- Price -->
+                            <div>
+                                <label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Price <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">Rs.</span>
+                                    </div>
+                                    <input type="number" id="productPrice" name="price" step="0.01" min="0.01" required
+                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <!-- Stock Quantity -->
+                            <div>
+                                <label for="stockQuantity" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Initial Stock Quantity
+                                </label>
+                                <input type="number" id="stockQuantity" name="stockQuantity" min="0" value="0"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="0">
+                            </div>
+
+                            <!-- Category -->
+                            <div>
+                                <label for="productCategory" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Category
+                                </label>
+                                <select id="productCategory" name="category"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select a category</option>
+                                    <option value="Fresh Produce">Fresh Produce</option>
+                                    <option value="Meat & Seafood">Meat & Seafood</option>
+                                    <option value="Bakery">Bakery</option>
+                                    <option value="Dairy">Dairy</option>
+                                    <option value="Beverages">Beverages</option>
+                                    <option value="Snacks">Snacks</option>
+                                    <option value="Frozen Foods">Frozen Foods</option>
+                                    <option value="Household">Household</option>
+                                    <option value="Personal Care">Personal Care</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Image URL -->
+                            <div>
+                                <label for="imageUrl" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Image URL
+                                </label>
+                                <input type="url" id="imageUrl" name="imageUrl"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="https://example.com/image.jpg">
+                            </div>
+
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                            <button type="button" onclick="resetForm()" 
+                                    class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                                Reset Form
+                            </button>
+                            <button type="submit" 
+                                    class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Add Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Recent Products -->
+            <div class="bg-white shadow rounded-lg mt-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-slate-800">Recent Products</h3>
+                        <button onclick="loadRecentProducts()" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="recentProductsContainer" class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentProductsTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Recent products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // Load recent products on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecentProducts();
+        });
+
+        // Handle form submission
+        document.getElementById('addProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<svg class="w-5 h-5 inline mr-2 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Adding...';
+            submitButton.disabled = true;
+            
+            fetch('/api/products/add', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`Product "${data.productName}" added successfully! ID: ${data.productId}`, 'success');
+                    resetForm();
+                    loadRecentProducts();
+                } else {
+                    showMessage('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error adding product', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+        });
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('addProductForm').reset();
+            document.getElementById('stockQuantity').value = '0';
+        }
+
+        // Load recent products
+        function loadRecentProducts() {
+            fetch('/api/products/all')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayRecentProducts(data.products.slice(-10)); // Show last 10 products
+                    } else {
+                        showMessage('Error loading products: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error loading products', 'error');
+                });
+        }
+
+        // Display recent products
+        function displayRecentProducts(products) {
+            const tbody = document.getElementById('recentProductsTableBody');
+            tbody.innerHTML = '';
+
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No products found</td></tr>';
+                return;
+            }
+
+            products.reverse().forEach(product => { // Show newest first
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.category || 'N/A'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs.${product.price}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.stockQuantity}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const textColor = 'text-white';
+            
+            messageDiv.className = `${bgColor} ${textColor} px-6 py-3 rounded-lg shadow-lg mb-2 max-w-md`;
+            messageDiv.textContent = message;
+            
+            container.appendChild(messageDiv);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        // Auto-fill category based on product name
+        document.getElementById('productName').addEventListener('input', function() {
+            const name = this.value.toLowerCase();
+            const categorySelect = document.getElementById('productCategory');
+            
+            if (name.includes('tomato') || name.includes('broccoli') || name.includes('apple') || name.includes('banana')) {
+                categorySelect.value = 'Fresh Produce';
+            } else if (name.includes('salmon') || name.includes('chicken') || name.includes('beef') || name.includes('fish')) {
+                categorySelect.value = 'Meat & Seafood';
+            } else if (name.includes('bread') || name.includes('croissant') || name.includes('cake') || name.includes('muffin')) {
+                categorySelect.value = 'Bakery';
+            } else if (name.includes('milk') || name.includes('cheese') || name.includes('yogurt') || name.includes('butter')) {
+                categorySelect.value = 'Dairy';
+            } else if (name.includes('juice') || name.includes('soda') || name.includes('water') || name.includes('coffee')) {
+                categorySelect.value = 'Beverages';
+            }
+        });
+    </script>
+
+</body>
+</html>

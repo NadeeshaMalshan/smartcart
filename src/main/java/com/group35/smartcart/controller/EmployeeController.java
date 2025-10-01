@@ -686,4 +686,467 @@ public class EmployeeController {
             return ResponseEntity.status(500).build();
         }
     }
+    
+    // ========== STOCK MANAGEMENT ENDPOINTS ==========
+    
+    // Stock Management Dashboard
+    @GetMapping("/inventory/stock")
+    public String stockManagementPage(HttpSession session, Model model) {
+        Employee employee = (Employee) session.getAttribute("employee");
+        
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            return "redirect:/employee/login";
+        }
+        
+        try {
+            List<Product> products = productRepository.findAll();
+            model.addAttribute("products", products);
+            model.addAttribute("employee", employee);
+            model.addAttribute("title", "Stock Management - SmartCart");
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Failed to load products");
+        }
+        
+        return "stock-management";
+    }
+    
+    // Add Stock API
+    @PostMapping("/api/stock/add")
+    @ResponseBody
+    public Map<String, Object> addStock(@RequestParam Long productId, 
+                                       @RequestParam Integer quantity,
+                                       HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (productId == null || quantity == null || quantity <= 0) {
+            response.put("success", false);
+            response.put("message", "Invalid product ID or quantity");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                int currentStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+                int newStock = currentStock + quantity;
+                
+                product.setStockQuantity(newStock);
+                productRepository.save(product);
+                
+                response.put("success", true);
+                response.put("message", "Stock added successfully");
+                response.put("productName", product.getName());
+                response.put("oldStock", currentStock);
+                response.put("addedQuantity", quantity);
+                response.put("newStock", newStock);
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to add stock");
+        }
+        
+        return response;
+    }
+    
+    // Delete Stock API
+    @PostMapping("/api/stock/delete")
+    @ResponseBody
+    public Map<String, Object> deleteStock(@RequestParam Long productId, 
+                                          @RequestParam Integer quantity,
+                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (productId == null || quantity == null || quantity <= 0) {
+            response.put("success", false);
+            response.put("message", "Invalid product ID or quantity");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                int currentStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+                
+                if (currentStock < quantity) {
+                    response.put("success", false);
+                    response.put("message", "Cannot delete more stock than available. Current stock: " + currentStock);
+                    return response;
+                }
+                
+                int newStock = currentStock - quantity;
+                product.setStockQuantity(newStock);
+                productRepository.save(product);
+                
+                response.put("success", true);
+                response.put("message", "Stock deleted successfully");
+                response.put("productName", product.getName());
+                response.put("oldStock", currentStock);
+                response.put("deletedQuantity", quantity);
+                response.put("newStock", newStock);
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete stock");
+        }
+        
+        return response;
+    }
+    
+    // Get Stock Information API
+    @GetMapping("/api/stock/info/{productId}")
+    @ResponseBody
+    public Map<String, Object> getStockInfo(@PathVariable Long productId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                response.put("success", true);
+                response.put("productId", product.getId());
+                response.put("productName", product.getName());
+                response.put("currentStock", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+                response.put("price", product.getPrice());
+                response.put("category", product.getCategory());
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to get stock information");
+        }
+        
+        return response;
+    }
+    
+    // Get All Products with Stock API
+    @GetMapping("/api/stock/all")
+    @ResponseBody
+    public Map<String, Object> getAllStock(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            List<Product> products = productRepository.findAll();
+            List<Map<String, Object>> stockList = new ArrayList<>();
+            
+            for (Product product : products) {
+                Map<String, Object> stockInfo = new HashMap<>();
+                stockInfo.put("productId", product.getId());
+                stockInfo.put("productName", product.getName());
+                stockInfo.put("currentStock", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+                stockInfo.put("price", product.getPrice());
+                stockInfo.put("category", product.getCategory());
+                stockInfo.put("isInStock", product.isInStock());
+                stockList.add(stockInfo);
+            }
+            
+            response.put("success", true);
+            response.put("products", stockList);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to get stock information");
+        }
+        
+        return response;
+    }
+    
+    // ========== PRODUCT MANAGEMENT ENDPOINTS ==========
+    
+    // Add Product Page
+    @GetMapping("/products/add")
+    public String addProductPage(HttpSession session, Model model) {
+        Employee employee = (Employee) session.getAttribute("employee");
+        
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            return "redirect:/employee/login";
+        }
+        
+        model.addAttribute("employee", employee);
+        model.addAttribute("title", "Add Product - SmartCart");
+        
+        // Get all unique categories for dropdown
+        try {
+            List<String> categories = productRepository.findAllCategories();
+            model.addAttribute("categories", categories);
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("categories", new ArrayList<String>());
+        }
+        
+        return "add-product";
+    }
+    
+    // Add Product API
+    @PostMapping("/api/products/add")
+    @ResponseBody
+    public Map<String, Object> addProduct(@RequestParam String name,
+                                         @RequestParam String description,
+                                         @RequestParam BigDecimal price,
+                                         @RequestParam String category,
+                                         @RequestParam(required = false) String imageUrl,
+                                         @RequestParam(required = false, defaultValue = "0") Integer stockQuantity,
+                                         HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (name == null || name.trim().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Product name is required");
+            return response;
+        }
+        
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            response.put("success", false);
+            response.put("message", "Valid price is required");
+            return response;
+        }
+        
+        if (stockQuantity == null || stockQuantity < 0) {
+            stockQuantity = 0;
+        }
+        
+        try {
+            // Check if product with same name already exists
+            List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase(name.trim());
+            for (Product existingProduct : existingProducts) {
+                if (existingProduct.getName().equalsIgnoreCase(name.trim())) {
+                    response.put("success", false);
+                    response.put("message", "A product with this name already exists");
+                    return response;
+                }
+            }
+            
+            // Create new product
+            Product newProduct = new Product();
+            newProduct.setName(name.trim());
+            newProduct.setDescription(description != null ? description.trim() : "");
+            newProduct.setPrice(price);
+            newProduct.setCategory(category != null ? category.trim() : "");
+            newProduct.setImageUrl(imageUrl != null ? imageUrl.trim() : "");
+            newProduct.setStockQuantity(stockQuantity);
+            
+            Product savedProduct = productRepository.save(newProduct);
+            
+            response.put("success", true);
+            response.put("message", "Product added successfully");
+            response.put("productId", savedProduct.getId());
+            response.put("productName", savedProduct.getName());
+            response.put("productPrice", savedProduct.getPrice());
+            response.put("productCategory", savedProduct.getCategory());
+            response.put("stockQuantity", savedProduct.getStockQuantity());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to add product: " + e.getMessage());
+        }
+        
+        return response;
+    }
+    
+    // Get All Products API
+    @GetMapping("/api/products/all")
+    @ResponseBody
+    public Map<String, Object> getAllProducts(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            List<Product> products = productRepository.findAll();
+            List<Map<String, Object>> productList = new ArrayList<>();
+            
+            for (Product product : products) {
+                Map<String, Object> productInfo = new HashMap<>();
+                productInfo.put("id", product.getId());
+                productInfo.put("name", product.getName());
+                productInfo.put("description", product.getDescription());
+                productInfo.put("price", product.getPrice());
+                productInfo.put("category", product.getCategory());
+                productInfo.put("imageUrl", product.getImageUrl());
+                productInfo.put("stockQuantity", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+                productInfo.put("isInStock", product.isInStock());
+                productList.add(productInfo);
+            }
+            
+            response.put("success", true);
+            response.put("products", productList);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to get products");
+        }
+        
+        return response;
+    }
+    
+    // ========== PRICE MANAGEMENT ENDPOINTS ==========
+    
+    // Change Price Page
+    @GetMapping("/products/change-price")
+    public String changePricePage(HttpSession session, Model model) {
+        Employee employee = (Employee) session.getAttribute("employee");
+        
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            return "redirect:/employee/login";
+        }
+        
+        model.addAttribute("employee", employee);
+        model.addAttribute("title", "Change Product Price - SmartCart");
+        
+        // Get all products for the page
+        try {
+            List<Product> products = productRepository.findAll();
+            model.addAttribute("products", products);
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("products", new ArrayList<Product>());
+        }
+        
+        return "change-price";
+    }
+    
+    // Get Product Price Info API
+    @GetMapping("/api/products/{productId}/price-info")
+    @ResponseBody
+    public Map<String, Object> getProductPriceInfo(@PathVariable Long productId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                response.put("success", true);
+                response.put("productId", product.getId());
+                response.put("productName", product.getName());
+                response.put("currentPrice", product.getPrice());
+                response.put("category", product.getCategory());
+                response.put("stockQuantity", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to get product information");
+        }
+        
+        return response;
+    }
+    
+    // Update Product Price API
+    @PostMapping("/api/products/{productId}/update-price")
+    @ResponseBody
+    public Map<String, Object> updateProductPrice(@PathVariable Long productId,
+                                                 @RequestParam BigDecimal newPrice,
+                                                 HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            response.put("success", false);
+            response.put("message", "Valid price is required");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                BigDecimal oldPrice = product.getPrice();
+                
+                product.setPrice(newPrice);
+                Product savedProduct = productRepository.save(product);
+                
+                response.put("success", true);
+                response.put("message", "Product price updated successfully");
+                response.put("productId", savedProduct.getId());
+                response.put("productName", savedProduct.getName());
+                response.put("oldPrice", oldPrice);
+                response.put("newPrice", savedProduct.getPrice());
+                response.put("priceChange", newPrice.subtract(oldPrice));
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to update product price: " + e.getMessage());
+        }
+        
+        return response;
+    }
+    
 }
