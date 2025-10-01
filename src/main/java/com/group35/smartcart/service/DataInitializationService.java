@@ -5,6 +5,7 @@ import com.group35.smartcart.entity.Product;
 import com.group35.smartcart.repository.EmployeeRepository;
 import com.group35.smartcart.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
@@ -21,16 +22,31 @@ public class DataInitializationService implements CommandLineRunner {
     @Autowired
     private EmployeeRepository employeeRepository;
     
+    @Value("${app.initialize-data:true}")
+    private boolean initializeData;
+    
     @Override
     public void run(String... args) throws Exception {
+        // Only initialize if the flag is enabled
+        if (!initializeData) {
+            System.out.println("Data initialization is disabled via configuration");
+            return;
+        }
+        
         // Only initialize if no products exist
         if (productRepository.count() == 0) {
+            System.out.println("No products found, initializing sample products...");
             initializeProducts();
+        } else {
+            System.out.println("Products already exist, skipping initialization");
         }
         
         // Only initialize if no employees exist
         if (employeeRepository.count() == 0) {
+            System.out.println("No employees found, initializing sample employees...");
             initializeEmployees();
+        } else {
+            System.out.println("Employees already exist, skipping initialization");
         }
     }
     
