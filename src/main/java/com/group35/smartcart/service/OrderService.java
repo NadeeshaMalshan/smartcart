@@ -2,11 +2,14 @@ package com.group35.smartcart.service;
 
 import com.group35.smartcart.entity.Order;
 import com.group35.smartcart.repository.OrderRepository;
+import com.group35.smartcart.repository.DeliveryAssignmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -18,10 +21,12 @@ import java.util.Optional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final DeliveryAssignmentRepository deliveryAssignmentRepository;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, DeliveryAssignmentRepository deliveryAssignmentRepository) {
         this.orderRepository = orderRepository;
+        this.deliveryAssignmentRepository = deliveryAssignmentRepository;
     }
 
     /**
@@ -79,10 +84,20 @@ public class OrderService {
 
     /**
      * Deletes an order by its ID.
+     * Also handles deletion of related delivery assignments to avoid foreign key constraint violations.
      * 
      * @param id the order ID to delete
      */
     public void deleteOrder(Long id) {
+        // Check if order has delivery assignments and delete them first
+        Optional<com.group35.smartcart.entity.DeliveryAssignment> assignmentOpt = 
+            deliveryAssignmentRepository.findByOrderPaymentId(id);
+        if (assignmentOpt.isPresent()) {
+            // Delete the delivery assignment first to avoid foreign key constraint violation
+            deliveryAssignmentRepository.delete(assignmentOpt.get());
+        }
+        
+        // Now delete the order
         orderRepository.deleteById(id);
     }
 
@@ -127,5 +142,33 @@ public class OrderService {
     @Transactional(readOnly = true)
     public long countOrdersByStatus(String status) {
         return orderRepository.countByOrderStatus(status);
+    }
+
+    /**
+     * Gets order summary statistics for dashboard display.
+     * 
+     * @return Map containing total, pending, and approved order counts
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Long> getOrderSummary() {
+        Map<String, Long> summary = new HashMap<>();
+        
+        // Get total orders count
+        long totalOrders = orderRepository.count();
+        summary.put("totalOrders", totalOrders);
+        
+        // Get pending orders count
+        long pendingOrders = orderRepository.countByOrderStatus("PENDING");
+        summary.put("pendingOrders", pendingOrders);
+        
+        // Get approved orders count
+        long approvedOrders = orderRepository.countByOrderStatus("APPROVED");
+        summary.put("approvedOrders", approvedOrders);
+        
+        // Get declined orders count (optional for completeness)
+        long declinedOrders = orderRepository.countByOrderStatus("DECLINED");
+        summary.put("declinedOrders", declinedOrders);
+        
+        return summary;
     }
 }

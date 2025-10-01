@@ -10,6 +10,7 @@ import com.group35.smartcart.repository.ProductRepository;
 import com.group35.smartcart.repository.CustomerPaymentRepository;
 import com.group35.smartcart.repository.BillRepository;
 import com.group35.smartcart.service.EmployeeService;
+import com.group35.smartcart.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -48,6 +49,9 @@ public class EmployeeController {
     
     @Autowired
     private BillRepository billRepository;
+    
+    @Autowired
+    private OrderService orderService;
     
     // Employee Login Page
     @GetMapping("/employee/login")
@@ -650,6 +654,74 @@ public class EmployeeController {
             e.printStackTrace();
             response.put("success", false);
             response.put("message", "Failed to check stock availability");
+        }
+        
+        return response;
+    }
+    
+    // API endpoint to get order summary statistics
+    @GetMapping("/api/order-summary")
+    @ResponseBody
+    public Map<String, Object> getOrderSummary(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.CASHIER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Map<String, Long> summary = orderService.getOrderSummary();
+            response.put("success", true);
+            response.put("summary", summary);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to fetch order summary");
+        }
+        
+        return response;
+    }
+    
+    // Delete order endpoint
+    @DeleteMapping("/api/payments/{orderId}")
+    @ResponseBody
+    public Map<String, Object> deleteOrder(@PathVariable Long orderId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.CASHIER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            // Check if order exists
+            if (!orderService.existsById(orderId)) {
+                response.put("success", false);
+                response.put("message", "Order not found");
+                return response;
+            }
+            
+            // Get order details for logging
+            Optional<Order> orderOpt = orderService.getOrderById(orderId);
+            String orderInfo = orderOpt.isPresent() ? 
+                "Order #" + orderId + " (Customer: " + orderOpt.get().getUsername() + ")" : 
+                "Order #" + orderId;
+            
+            // Delete the order
+            orderService.deleteOrder(orderId);
+            
+            response.put("success", true);
+            response.put("message", "Order deleted successfully: " + orderInfo);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete order: " + e.getMessage());
         }
         
         return response;
