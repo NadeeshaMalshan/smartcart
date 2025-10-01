@@ -686,4 +686,164 @@ public class EmployeeController {
             return ResponseEntity.status(500).build();
         }
     }
+    
+    // Employee Management for IT Assistant
+    
+    // Get all employees
+    @GetMapping("/api/employees")
+    @ResponseBody
+    public Map<String, Object> getAllEmployees(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            List<Employee> employees = employeeService.getAllEmployees();
+            List<Map<String, Object>> employeeList = new ArrayList<>();
+            
+            for (Employee emp : employees) {
+                Map<String, Object> empData = new HashMap<>();
+                empData.put("empid", emp.getEmpid());
+                empData.put("type", emp.getType().getDisplayName());
+                empData.put("isActive", emp.getIsActive());
+                empData.put("createdAt", emp.getCreatedAt());
+                empData.put("updatedAt", emp.getUpdatedAt());
+                employeeList.add(empData);
+            }
+            
+            response.put("success", true);
+            response.put("employees", employeeList);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to fetch employees");
+        }
+        
+        return response;
+    }
+    
+    // Add new employee
+    @PostMapping("/api/employees")
+    @ResponseBody
+    public Map<String, Object> addEmployee(@RequestParam String empid,
+                                          @RequestParam String password,
+                                          @RequestParam String type,
+                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (empid == null || empid.trim().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Employee ID is required");
+            return response;
+        }
+        
+        if (password == null || password.trim().length() < 6) {
+            response.put("success", false);
+            response.put("message", "Password must be at least 6 characters");
+            return response;
+        }
+        
+        if (type == null || type.trim().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Employee type is required");
+            return response;
+        }
+        
+        try {
+            // Check if employee already exists
+            if (employeeService.employeeExists(empid.trim())) {
+                response.put("success", false);
+                response.put("message", "Employee ID already exists");
+                return response;
+            }
+            
+            // Validate employee type
+            Employee.EmployeeType employeeType;
+            try {
+                employeeType = Employee.EmployeeType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                response.put("success", false);
+                response.put("message", "Invalid employee type");
+                return response;
+            }
+            
+            // Create new employee
+            Employee newEmployee = new Employee(empid.trim(), password.trim(), employeeType);
+            employeeService.saveEmployee(newEmployee);
+            
+            response.put("success", true);
+            response.put("message", "Employee added successfully");
+            response.put("employee", Map.of(
+                "empid", newEmployee.getEmpid(),
+                "type", newEmployee.getType().getDisplayName(),
+                "isActive", newEmployee.getIsActive(),
+                "createdAt", newEmployee.getCreatedAt()
+            ));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to add employee");
+        }
+        
+        return response;
+    }
+    
+    // Delete employee (soft delete by setting isActive to false)
+    @DeleteMapping("/api/employees/{empid}")
+    @ResponseBody
+    public Map<String, Object> deleteEmployee(@PathVariable String empid, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Prevent deleting own account
+        if (empid.equals(employee.getEmpid())) {
+            response.put("success", false);
+            response.put("message", "Cannot delete your own account");
+            return response;
+        }
+        
+        try {
+            Optional<Employee> employeeOpt = employeeService.getEmployeeByEmpid(empid);
+            if (employeeOpt.isPresent()) {
+                Employee empToDelete = employeeOpt.get();
+                empToDelete.setIsActive(false);
+                empToDelete.setUpdatedAt(LocalDateTime.now());
+                employeeService.saveEmployee(empToDelete);
+                
+                response.put("success", true);
+                response.put("message", "Employee deleted successfully");
+            } else {
+                response.put("success", false);
+                response.put("message", "Employee not found");
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete employee");
+        }
+        
+        return response;
+    }
 }
