@@ -7,16 +7,20 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class CartController {
+public class OrderReviewController {
     
-    @GetMapping("/cart")
-    public String cartPage(Model model, HttpSession session) {
+    @GetMapping("/orderreview")
+    public String reviewPage(Model model, HttpSession session) {
         // Check if user is logged in
         Customer customer = (Customer) session.getAttribute("customer");
         
-        model.addAttribute("title", "SmartCart - Shopping Cart");
+        if (customer == null) {
+            // User is not logged in, redirect to login page
+            return "redirect:/login?returnUrl=/orderreview";
+        }
+        
+        model.addAttribute("title", "SmartCart - Review Order");
         model.addAttribute("customer", customer);
-        model.addAttribute("isLoggedIn", customer != null);
-        return "cart";
+        return "review";
     }
 }
