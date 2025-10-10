@@ -172,6 +172,8 @@ public class EmployeeController {
         return "delivery-coordinator-dashboard";
     }
     
+  
+
     private String redirectBasedOnEmployeeType(Employee.EmployeeType type) {
         switch (type) {
             case CASHIER:
@@ -758,6 +760,9 @@ public class EmployeeController {
             return ResponseEntity.status(500).build();
         }
     }
+    @GetMapping("/reviews")
+    public String reviewPage(){
+        return "review";
     
     // Employee Management for IT Assistant
     

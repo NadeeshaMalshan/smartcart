@@ -11,6 +11,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -27,7 +29,51 @@ public class AuthController {
         return "login";
     }
     
-    // Login Process
+    // API Login Process for AJAX requests
+    @PostMapping("/api/login")
+    @ResponseBody
+    public Map<String, Object> apiLoginProcess(@RequestParam String username, 
+                                              @RequestParam String password,
+                                              HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        System.out.println("API Login attempt for username: " + username);
+        
+        Optional<Customer> customerOpt = customerRepository.findByUsernameAndIsActiveTrue(username);
+        
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            System.out.println("Customer found: " + customer.getFirstName() + " " + customer.getLastName());
+            
+            // Check password (in real app, use BCryptPasswordEncoder)
+            if (password.equals(customer.getPassword())) {
+                session.setAttribute("customer", customer);
+                System.out.println("API Login successful!");
+                
+                // Return user data for localStorage
+                response.put("success", true);
+                response.put("message", "Welcome back, " + customer.getFirstName() + "!");
+                response.put("user", Map.of(
+                    "username", customer.getUsername(),
+                    "firstName", customer.getFirstName(),
+                    "lastName", customer.getLastName(),
+                    "email", customer.getEmail(),
+                    "phoneNumber", customer.getPhoneNumber(),
+                    "billingAddress", customer.getBillingAddress() != null ? customer.getBillingAddress() : "",
+                    "postalCode", customer.getPostalCode() != null ? customer.getPostalCode() : ""
+                ));
+                return response;
+            } else {
+                System.out.println("Password mismatch!");
+            }
+        } else {
+            System.out.println("Customer not found!");
+        }
+        
+        response.put("success", false);
+        response.put("message", "Invalid username or password");
+        return response;
+    }
     @PostMapping("/login")
     public String loginProcess(@RequestParam String username, 
                               @RequestParam String password,

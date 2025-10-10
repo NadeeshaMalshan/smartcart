@@ -37,4 +37,11 @@ public class HomeController {
         return "deliver-assigment-management";
     }
 
+    @GetMapping("/admin-reviews")
+    public String adminReviews(Model model, HttpSession session){
+
+        model.addAttribute("title", "SmartCart - Admin Reviews");
+        return "admin-reviews";
+    }
+
 }

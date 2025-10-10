@@ -1,21 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartCart - Review Order</title>
-    <!-- Tailwind CSS -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartCart - Reviews</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-        }
+        body { font-family: 'Inter', sans-serif; }
         .text-brand { color: #16a34a; }
         .bg-brand { background-color: #16a34a; }
         .border-brand { border-color: #16a34a; }
@@ -23,401 +17,549 @@
         .header-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
-<body class="bg-slate-100">
-
-    <div class="bg-white min-h-screen">
-        <!-- Header -->
-        <header class="bg-white sticky top-0 z-50 header-shadow">
-            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-brand">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                    <span>SmartCart</span>
-                </a>
-                
-                <!-- Navigation -->
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="bg-white sticky top-0 z-50 header-shadow">
+        <div class="bg-slate-100 text-slate-600 text-xs py-2">
+            <div class="container mx-auto px-4 flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <!-- Orders Button (only show when logged in) -->
-                    <a th:if="${isLoggedIn}" href="/orders" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
-                        <span class="font-semibold">Orders</span>
+                    <a href="/" class="flex items-center space-x-1 hover:text-brand font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                        <span>Home</span>
                     </a>
-                    
-                    <!-- User Menu (only show when logged in) -->
-                    <div th:if="${isLoggedIn}" class="relative">
-                        <button class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full hover:bg-slate-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
-                            <span class="font-semibold" th:text="${customer.username}">User</span>
-                        </button>
-                    </div>
-                    
-                    <a href="/payment" class="bg-brand text-white px-6 py-2 rounded-full hover-bg-brand-dark">
-                        Back to Payment
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/shopping" class="flex items-center space-x-1 hover:text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>Shopping</span>
                     </a>
                 </div>
             </div>
-        </header>
+        </div>
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                <span>SmartCart</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <span id="userInfo" class="text-sm text-slate-600">Welcome, <span id="currentUser" class="font-semibold text-brand">Guest</span></span>
+                <button id="writeReviewBtn" class="bg-brand text-white font-semibold px-6 py-2 rounded-full hover-bg-brand-dark transition-colors" style="display: none;">
+                    Write a Review
+                </button>
+            </div>
+        </div>
+    </header>
 
-        <!-- Main Content -->
-        <main class="container mx-auto px-4 py-8" data-customer th:if="${customer != null}">
-            <!-- Progress Steps -->
-            <div class="max-w-6xl mx-auto mb-8">
-                <div class="flex items-center justify-center space-x-4 md:space-x-8">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-brand text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
-                        <span class="text-sm font-medium text-slate-600">Cart</span>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">Customer Reviews</h1>
+            <div class="text-slate-600">
+                Total Reviews: <span id="reviewCount" class="font-semibold text-brand">0</span>
+            </div>
+        </div>
+
+        <!-- Reviews Grid -->
+        <div id="reviewsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Reviews will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-16 hidden">
+            <div class="text-slate-400 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4"><path d="M9 11H5a2 2 0 0 0-2 2v3c0 1.1.9 2 2 2h4m6-6h4a2 2 0 0 1 2 2v3c0 1.1-.9 2-2 2h-4m-6 0V9a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1"/></svg>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-600 mb-2">No Reviews Yet</h3>
+            <p class="text-slate-500">Be the first to share your experience!</p>
+        </div>
+    </main>
+
+    <!-- Create Review Modal -->
+    <div id="createModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Write a Review</h2>
+                <button id="closeCreateModal" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            <form id="createReviewForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+                    <div class="flex space-x-1" id="createStarRating">
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="1">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="2">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="3">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="4">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="5">★</button>
                     </div>
-                    <div class="w-12 md:w-16 h-0.5 bg-brand"></div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-brand text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
-                        <span class="text-sm font-medium text-slate-600">Billing</span>
-                    </div>
-                    <div class="w-12 md:w-16 h-0.5 bg-brand"></div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-brand text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                        <span class="text-sm font-medium text-slate-600">Payment</span>
-                    </div>
-                    <div class="w-12 md:w-16 h-0.5 bg-brand"></div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-brand text-white rounded-full flex items-center justify-center text-sm font-semibold">4</div>
-                        <span class="text-sm font-medium text-brand">Review</span>
+                    <input type="hidden" id="createStars" name="stars" required>
+                </div>
+                <div>
+                    <label for="createMessage" class="block text-sm font-medium text-slate-700 mb-2">Review Message</label>
+                    <textarea id="createMessage" name="message" rows="4" maxlength="1000" 
+                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
+                        placeholder="Share your experience..." required></textarea>
+                    <div class="text-xs text-slate-500 mt-1">
+                        <span id="createCharCount">0</span>/1000 characters
                     </div>
                 </div>
-            </div>
-
-            <h1 class="text-3xl font-bold text-slate-800 mb-8 text-center">Review Your Order</h1>
-            
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Left Side - Order Details -->
-                    <div class="lg:col-span-2 space-y-6">
-                        <!-- Order Items -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-brand"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                                Order Items
-                            </h2>
-                            <div id="order-items" class="space-y-4">
-                                <!-- Order items will be populated by JavaScript -->
-                            </div>
-                        </div>
-
-                        <!-- Billing Information -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-brand"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
-                                Billing Information
-                            </h2>
-                            <div id="billing-summary" class="text-slate-600">
-                                <!-- Billing info will be populated by JavaScript -->
-                            </div>
-                        </div>
-
-                        <!-- Payment Information -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-6">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-brand"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                Payment Information
-                            </h2>
-                            <div id="payment-summary" class="text-slate-600">
-                                <!-- Payment info will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Side - Order Summary & Actions -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <!-- Order Summary -->
-                        <div class="bg-white border border-slate-200 rounded-xl p-6 sticky top-24">
-                            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-brand"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                                Order Summary
-                            </h2>
-                            
-                            <div class="space-y-3 mb-6">
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Subtotal</span>
-                                    <span id="subtotal" class="font-semibold">LKR 0.00</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Delivery</span>
-                                    <span class="font-semibold text-green-600">FREE</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Tax (15%)</span>
-                                    <span id="tax" class="font-semibold">LKR 0.00</span>
-                                </div>
-                                <hr class="border-slate-200">
-                                <div class="flex justify-between text-lg font-bold">
-                                    <span>Total</span>
-                                    <span id="total" class="text-brand">LKR 0.00</span>
-                                </div>
-                            </div>
-
-                            <!-- Place Order Button -->
-                            <button id="place-order-btn" class="w-full bg-brand text-white font-bold py-4 rounded-lg hover-bg-brand-dark text-lg mb-4">
-                                Place Order
-                            </button>
-                            
-                            <p class="text-xs text-slate-500 text-center">
-                                By placing this order, you agree to our terms and conditions
-                            </p>
-                        </div>
-
-                        <!-- Security Notice -->
-                        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 mr-2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                                <div>
-                                    <p class="text-sm font-medium text-green-800">Secure Checkout</p>
-                                    <p class="text-xs text-green-600">Your payment information is encrypted and secure</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelCreate" class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-brand text-white rounded-lg hover-bg-brand-dark transition-colors">
+                        Submit Review
+                    </button>
                 </div>
-            </div>
-        </main>
+            </form>
+        </div>
     </div>
 
-    <!-- Order Confirmation Modal -->
-    <div id="order-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
-            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <!-- Edit Review Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Edit Review</h2>
+                <button id="closeEditModal" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Your Payment is Under Review</h3>
-            <p class="text-slate-600 mb-6">Please wait while we review your payment. You will be notified once your order is confirmed.</p>
-            <div class="space-y-3">
-                <button onclick="goToHome()" class="w-full bg-brand text-white px-6 py-3 rounded-lg hover-bg-brand-dark font-semibold">
-                    Continue Shopping
-                </button>
-                <button onclick="viewOrderDetails()" class="w-full bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 font-semibold">
-                    View Order Details
-                </button>
+            <form id="editReviewForm" class="space-y-4">
+                <input type="hidden" id="editReviewId">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+                    <div class="flex space-x-1" id="editStarRating">
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="1">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="2">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="3">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="4">★</button>
+                        <button type="button" class="star-btn text-2xl text-slate-300 hover:text-yellow-400" data-rating="5">★</button>
+                    </div>
+                    <input type="hidden" id="editStars" name="stars" required>
+                </div>
+                <div>
+                    <label for="editMessage" class="block text-sm font-medium text-slate-700 mb-2">Review Message</label>
+                    <textarea id="editMessage" name="message" rows="4" maxlength="1000" 
+                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
+                        placeholder="Share your experience..." required></textarea>
+                    <div class="text-xs text-slate-500 mt-1">
+                        <span id="editCharCount">0</span>/1000 characters
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelEdit" class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-brand text-white rounded-lg hover-bg-brand-dark transition-colors">
+                        Update Review
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 max-w-sm">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg id="notificationIcon" class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p id="notificationMessage" class="text-sm font-medium text-slate-800"></p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript for review functionality -->
     <script>
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        let selectedItems = JSON.parse(localStorage.getItem('selectedItems')) || [];
-        let billingInfo = JSON.parse(localStorage.getItem('billingInfo')) || {};
-        let paymentInfo = JSON.parse(localStorage.getItem('paymentInfo')) || {};
-        
-        // Initialize page
+        // Global variables
+        let currentUser = null;
+        let reviews = [];
+
+        // API endpoints
+        const API_BASE = '/api/reviews';
+
+        // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            renderOrderItems();
-            renderBillingSummary();
-            renderPaymentSummary();
-            renderOrderSummary();
-            setupPlaceOrderButton();
+            initializeUser();
+            loadReviews();
+            setupEventListeners();
         });
-        
-        function renderOrderItems() {
-            const orderItemsContainer = document.getElementById('order-items');
-            
-            if (selectedItems.length === 0) {
-                orderItemsContainer.innerHTML = '<p class="text-slate-500 text-center py-4">No items selected</p>';
-                return;
-            }
-            
-            // Filter cart items based on selected items
-            const selectedCartItems = cart.filter(item => selectedItems.includes(String(item.id)));
-            
-            orderItemsContainer.innerHTML = selectedCartItems.map(item => {
-                const itemTotal = (item.price || 0) * item.quantity;
-                
-                return `
-                    <div class="flex items-center space-x-4 p-4 border border-slate-200 rounded-lg">
-                        <div class="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                            ${item.imageUrl ? 
-                                `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-contain rounded-lg" />` :
-                                `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>`
-                            }
-                        </div>
-                        <div class="flex-grow">
-                            <h3 class="font-semibold text-slate-800">${item.name}</h3>
-                            <p class="text-sm text-slate-500">Quantity: ${item.quantity}</p>
-                            <p class="text-sm text-slate-500">LKR ${(item.price || 0).toFixed(2)} each</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-brand text-lg">LKR ${itemTotal.toFixed(2)}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function renderBillingSummary() {
-            const billingSummary = document.getElementById('billing-summary');
-            
-            if (billingInfo.firstName) {
-                billingSummary.innerHTML = `
-                    <div class="space-y-2">
-                        <p><strong>Name:</strong> ${billingInfo.firstName} ${billingInfo.lastName}</p>
-                        <p><strong>Address:</strong> ${billingInfo.address}</p>
-                        <p><strong>Zip Code:</strong> ${billingInfo.zipCode}</p>
-                        <p><strong>Phone:</strong> ${billingInfo.phoneNumber}</p>
-                    </div>
-                `;
-            } else {
-                billingSummary.innerHTML = '<p class="text-slate-500">No billing information available</p>';
+
+        // User management
+        function initializeUser() {
+            try {
+                const userData =  localStorage.getItem('currentUser');
+                if (userData) {
+                    currentUser = JSON.parse(userData);
+                    document.getElementById('currentUser').textContent = currentUser.email || 'User';
+                    document.getElementById('writeReviewBtn').style.display = 'block';
+                } else {
+                    document.getElementById('currentUser').textContent = 'Guest';
+                    document.getElementById('writeReviewBtn').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                currentUser = null;
             }
         }
-        
-        function renderPaymentSummary() {
-            const paymentSummary = document.getElementById('payment-summary');
+
+        // Event listeners
+        function setupEventListeners() {
+            // Write review button
+            document.getElementById('writeReviewBtn').addEventListener('click', openCreateModal);
             
-            if (paymentInfo.method) {
-                if (paymentInfo.method === 'bank') {
-                    paymentSummary.innerHTML = `
-                        <div class="space-y-2">
-                            <p><strong>Payment Method:</strong> Bank Transfer</p>
-                            <p><strong>Bank Name:</strong> ${paymentInfo.bankName || 'N/A'}</p>
-                            <p><strong>Account Holder:</strong> ${paymentInfo.accountHolderName || 'N/A'}</p>
-                            <p><strong>Account Number:</strong> ${paymentInfo.accountNumber ? '****' + paymentInfo.accountNumber.slice(-4) : 'N/A'}</p>
-                            <p><strong>Branch Code:</strong> ${paymentInfo.branchCode || 'N/A'}</p>
-                            <p><strong>Instructions:</strong> Please complete bank transfer as instructed</p>
-                        </div>
-                    `;
-                }
-            } else {
-                paymentSummary.innerHTML = '<p class="text-slate-500">No payment information available</p>';
-            }
+            // Modal controls
+            document.getElementById('closeCreateModal').addEventListener('click', closeCreateModal);
+            document.getElementById('cancelCreate').addEventListener('click', closeCreateModal);
+            document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+            document.getElementById('cancelEdit').addEventListener('click', closeEditModal);
+            
+            // Form submissions
+            document.getElementById('createReviewForm').addEventListener('submit', handleCreateReview);
+            document.getElementById('editReviewForm').addEventListener('submit', handleEditReview);
+            
+            // Star rating handlers
+            setupStarRating('createStarRating', 'createStars');
+            setupStarRating('editStarRating', 'editStars');
+            
+            // Character counters
+            document.getElementById('createMessage').addEventListener('input', function() {
+                updateCharCount('createMessage', 'createCharCount');
+            });
+            document.getElementById('editMessage').addEventListener('input', function() {
+                updateCharCount('editMessage', 'editCharCount');
+            });
         }
-        
-        function renderOrderSummary() {
-            const subtotalElement = document.getElementById('subtotal');
-            const taxElement = document.getElementById('tax');
-            const totalElement = document.getElementById('total');
+
+        // Star rating functionality
+        function setupStarRating(containerId, inputId) {
+            const container = document.getElementById(containerId);
+            const input = document.getElementById(inputId);
+            const stars = container.querySelectorAll('.star-btn');
             
-            if (selectedItems.length === 0) {
-                subtotalElement.textContent = 'LKR 0.00';
-                taxElement.textContent = 'LKR 0.00';
-                totalElement.textContent = 'LKR 0.00';
-                return;
-            }
+            stars.forEach((star, index) => {
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const rating = parseInt(this.dataset.rating);
+                    input.value = rating;
+                    updateStarDisplay(container, rating);
+                });
+                
+                star.addEventListener('mouseenter', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    updateStarDisplay(container, rating, true);
+                });
+            });
             
-            // Filter cart items based on selected items
-            const selectedCartItems = cart.filter(item => selectedItems.includes(String(item.id)));
-            
-            const subtotal = selectedCartItems.reduce((sum, item) => {
-                return sum + ((item.price || 0) * item.quantity);
-            }, 0);
-            
-            const tax = subtotal * 0.15; // 15% tax
-            const total = subtotal + tax;
-            
-            subtotalElement.textContent = `LKR ${subtotal.toFixed(2)}`;
-            taxElement.textContent = `LKR ${tax.toFixed(2)}`;
-            totalElement.textContent = `LKR ${total.toFixed(2)}`;
+            container.addEventListener('mouseleave', function() {
+                const currentRating = parseInt(input.value) || 0;
+                updateStarDisplay(container, currentRating);
+            });
         }
-        
-        function setupPlaceOrderButton() {
-            const placeOrderBtn = document.getElementById('place-order-btn');
-            
-            placeOrderBtn.addEventListener('click', async function() {
-                // Validate that all information is available
-                if (selectedItems.length === 0) {
-                    showNotification('No items selected for order.', 'error');
-                    return;
-                }
-                
-                if (!billingInfo.firstName) {
-                    showNotification('Billing information is missing.', 'error');
-                    return;
-                }
-                
-                if (!paymentInfo.method) {
-                    showNotification('Payment information is missing.', 'error');
-                    return;
-                }
-                
-                // Disable button to prevent multiple clicks
-                placeOrderBtn.disabled = true;
-                placeOrderBtn.textContent = 'Placing Order...';
-                
-                try {
-                    // Prepare order data
-                    const selectedCartItems = cart.filter(item => selectedItems.includes(String(item.id)));
-                    const productIds = selectedCartItems.map(item => item.id).join(',');
-                    const productQuantities = selectedCartItems.map(item => item.quantity).join(',');
-                    
-                    const subtotal = selectedCartItems.reduce((sum, item) => {
-                        return sum + ((item.price || 0) * item.quantity);
-                    }, 0);
-                    
-                    // Get payslip location path from localStorage (if available)
-                    const payslipLocationPath = localStorage.getItem('payslipLocationPath') || '';
-                    
-                    // Send order to backend
-                    const formData = new FormData();
-                    formData.append('productIds', productIds);
-                    formData.append('productQuantities', productQuantities);
-                    formData.append('subtotal', subtotal.toString());
-                    formData.append('payslipLocationPath', payslipLocationPath);
-                    formData.append('bankName', paymentInfo.bankName || '');
-                    formData.append('accountHolderName', paymentInfo.accountHolderName || '');
-                    formData.append('accountNumber', paymentInfo.accountNumber || '');
-                    
-                    const response = await fetch('/place-order', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        // Show review popup
-                        showReviewPopup();
-                        
-                        // Clear cart and stored data after a delay
-                        setTimeout(() => {
-                            localStorage.removeItem('cart');
-                            localStorage.removeItem('selectedItems');
-                            localStorage.removeItem('billingInfo');
-                            localStorage.removeItem('paymentInfo');
-                            localStorage.removeItem('payslipLocationPath');
-                        }, 3000);
-                    } else {
-                        showNotification(result.message || 'Failed to place order.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error placing order:', error);
-                    showNotification('Failed to place order. Please try again.', 'error');
-                } finally {
-                    // Re-enable button
-                    placeOrderBtn.disabled = false;
-                    placeOrderBtn.textContent = 'Place Order';
+
+        function updateStarDisplay(container, rating, isHover = false) {
+            const stars = container.querySelectorAll('.star-btn');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = `star-btn text-2xl ${isHover ? 'text-yellow-400' : 'text-yellow-500'}`;
+                } else {
+                    star.className = 'star-btn text-2xl text-slate-300 hover:text-yellow-400';
                 }
             });
         }
-        
-        function showReviewPopup() {
-            document.getElementById('order-confirmation-modal').style.display = 'flex';
+
+        // Character counter
+        function updateCharCount(textareaId, counterId) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.getElementById(counterId);
+            counter.textContent = textarea.value.length;
         }
-        
-        function goToHome() {
-            window.location.href = '/shopping';
+
+        // Modal management
+        function openCreateModal() {
+            if (!currentUser) {
+                showNotification('Please log in to write a review', 'error');
+                return;
+            }
+            document.getElementById('createModal').classList.remove('hidden');
+            document.getElementById('createModal').classList.add('flex');
+            resetCreateForm();
         }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.add('hidden');
+            document.getElementById('createModal').classList.remove('flex');
+        }
+
+        function openEditModal(review) {
+            document.getElementById('editReviewId').value = review.id;
+            document.getElementById('editStars').value = review.stars;
+            document.getElementById('editMessage').value = review.message;
+            updateStarDisplay(document.getElementById('editStarRating'), review.stars);
+            updateCharCount('editMessage', 'editCharCount');
+            
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+        }
+
+        function resetCreateForm() {
+            document.getElementById('createReviewForm').reset();
+            document.getElementById('createStars').value = '';
+            updateStarDisplay(document.getElementById('createStarRating'), 0);
+            updateCharCount('createMessage', 'createCharCount');
+        }
+
+        // CRUD Operations
+        async function loadReviews() {
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) throw new Error('Failed to load reviews');
+                
+                reviews = await response.json();
+                renderReviews();
+                updateReviewCount();
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+                showNotification('Failed to load reviews', 'error');
+            }
+        }
+
+        async function handleCreateReview(e) {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showNotification('Please log in to create a review', 'error');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const stars = parseInt(document.getElementById('createStars').value);
+            const message = formData.get('message').trim();
+
+            if (!stars || stars < 1 || stars > 5) {
+                showNotification('Please select a rating', 'error');
+                return;
+            }
+
+            if (!message) {
+                showNotification('Please enter a review message', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: currentUser.username,
+                        stars: stars,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to create review');
+                }
+
+                showNotification('Review created successfully!', 'success');
+                closeCreateModal();
+                loadReviews();
+            } catch (error) {
+                console.error('Error creating review:', error);
+                showNotification(error.message || 'Failed to create review', 'error');
+            }
+        }
+
+        async function handleEditReview(e) {
+            e.preventDefault();
+            
+            const reviewId = document.getElementById('editReviewId').value;
+            const stars = parseInt(document.getElementById('editStars').value);
+            const message = document.getElementById('editMessage').value.trim();
+
+            if (!stars || stars < 1 || stars > 5) {
+                showNotification('Please select a rating', 'error');
+                return;
+            }
+
+            if (!message) {
+                showNotification('Please enter a review message', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/${reviewId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        stars: stars,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to update review');
+                }
+
+                showNotification('Review updated successfully!', 'success');
+                closeEditModal();
+                loadReviews();
+            } catch (error) {
+                console.error('Error updating review:', error);
+                showNotification(error.message || 'Failed to update review', 'error');
+            }
+        }
+
+        async function deleteReview(reviewId) {
+            if (!confirm('Are you sure you want to delete this review?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/${reviewId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Failed to delete review');
+                }
+
+                showNotification('Review deleted successfully!', 'success');
+                loadReviews();
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                showNotification(error.message || 'Failed to delete review', 'error');
+            }
+        }
+
+        // Rendering
+        function renderReviews() {
+            const container = document.getElementById('reviewsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (!reviews || reviews.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = reviews.map(review => createReviewCard(review)).join('');
+        }
+
+        function createReviewCard(review) {
+            const isOwner = currentUser && review.customer && review.customer.username === currentUser.username;
+            const canEdit = isOwner && !review.adminVerified;
+            const customerName = review.customer ? 
+                (review.customer.firstName ? `${review.customer.firstName} ${review.customer.lastName || ''}`.trim() : review.customer.id) 
+                : 'Anonymous';
+
+            return `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-white font-semibold">
+                                ${customerName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-slate-800">${escapeHtml(customerName)}</h3>
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex text-yellow-500">
+                                        ${generateStars(review.stars)}
+                                    </div>
+                                    <span class="text-sm text-slate-500">${review.stars}/5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${review.adminVerified ? 
+                                '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Verified</span>' : 
+                                '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">Pending</span>'
+                            }
+                        </div>
+                    </div>
+                    
+                    <p class="text-slate-700 mb-4 leading-relaxed">${escapeHtml(review.message)}</p>
+                    
+                    ${canEdit ? `
+                        <div class="flex space-x-2 pt-4 border-t border-slate-100">
+                            <button onclick="openEditModal(${JSON.stringify(review).replace(/"/g, '&quot;')})" 
+                                class="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">
+                                Edit
+                            </button>
+                            <button onclick="deleteReview(${review.id})" 
+                                class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+                                Delete
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function generateStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>';
+                } else {
+                    stars += '<svg class="w-4 h-4 fill-current text-slate-300" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>';
+                }
+            }
+            return stars;
+        }
+
+        function updateReviewCount() {
+            document.getElementById('reviewCount').textContent = reviews.length;
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         
         function viewOrderDetails() {
             // Navigate to the orders page
             window.location.href = '/orders';
         }
-        
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            }`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageEl = document.getElementById('notificationMessage');
+            const iconEl = document.getElementById('notificationIcon');
+            
+            messageEl.textContent = message;
+            
+            // Update icon and colors based on type
+            if (type === 'error') {
+                notification.querySelector('div').className = 'bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-4 max-w-sm';
+                iconEl.className = 'h-5 w-5 text-red-400';
+                iconEl.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />';
+            } else {
+                notification.querySelector('div').className = 'bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 max-w-sm';
+                iconEl.className = 'h-5 w-5 text-green-400';
+                iconEl.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />';
+            }
+            
+            notification.classList.remove('hidden');
             
             setTimeout(() => {
-                notification.remove();
-            }, 3000);
+                notification.classList.add('hidden');
+            }, 4000);
         }
     </script>
 </body>
