@@ -21,6 +21,6 @@ public class OrderReviewController {
         
         model.addAttribute("title", "SmartCart - Review Order");
         model.addAttribute("customer", customer);
-        return "review";
+        return "orderReview";
     }
 }

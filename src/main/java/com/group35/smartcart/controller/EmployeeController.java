@@ -761,10 +761,13 @@ public class EmployeeController {
         }
     }
     @GetMapping("/reviews")
-    public String reviewPage(){
+    public String reviewPage(HttpSession session, Model model){
+        Object customer = session.getAttribute("customer");
+        model.addAttribute("customer", customer);
+        model.addAttribute("isLoggedIn", customer != null);
         return "review";
-    
-    // Employee Management for IT Assistant
+        // Employee Management for IT Assistant
+    }
     
     // Get all employees
     @GetMapping("/api/employees")
