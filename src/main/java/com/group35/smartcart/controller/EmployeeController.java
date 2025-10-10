@@ -4,10 +4,13 @@ import com.group35.smartcart.entity.Employee;
 import com.group35.smartcart.entity.Order;
 import com.group35.smartcart.entity.Product;
 import com.group35.smartcart.entity.CustomerPayment;
+import com.group35.smartcart.entity.Bill;
 import com.group35.smartcart.repository.OrderRepository;
 import com.group35.smartcart.repository.ProductRepository;
 import com.group35.smartcart.repository.CustomerPaymentRepository;
+import com.group35.smartcart.repository.BillRepository;
 import com.group35.smartcart.service.EmployeeService;
+import com.group35.smartcart.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -43,6 +46,12 @@ public class EmployeeController {
     
     @Autowired
     private CustomerPaymentRepository customerPaymentRepository;
+    
+    @Autowired
+    private BillRepository billRepository;
+    
+    @Autowired
+    private OrderService orderService;
     
     // Employee Login Page
     @GetMapping("/employee/login")
@@ -223,6 +232,7 @@ public class EmployeeController {
                             item.put("name", product.getName());
                             item.put("price", product.getPrice());
                             item.put("quantity", quantity);
+                            item.put("stockQuantity", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
                             item.put("subtotal", product.getPrice().multiply(BigDecimal.valueOf(quantity)));
                             items.add(item);
                         }
@@ -248,6 +258,24 @@ public class EmployeeController {
                 
                 // Add payment slip path
                 paymentCard.put("payslipLocationPath", order.getPayslipLocationPath());
+                
+                // Add bill information for approved orders
+                if ("APPROVED".equals(order.getOrderStatus())) {
+                    Optional<Bill> billOpt = billRepository.findByPaymentId(order.getPaymentId());
+                    if (billOpt.isPresent()) {
+                        Bill bill = billOpt.get();
+                        Map<String, Object> billInfo = new HashMap<>();
+                        billInfo.put("id", bill.getId());
+                        billInfo.put("productNames", bill.getProductNames());
+                        billInfo.put("productQuantities", bill.getProductQuantities());
+                        billInfo.put("subtotal", bill.getSubtotal());
+                        billInfo.put("total", bill.getTotal());
+                        billInfo.put("bankName", bill.getBankName());
+                        billInfo.put("maskedAccountNumber", bill.getMaskedAccountNumber());
+                        billInfo.put("createdAt", bill.getCreatedAt());
+                        paymentCard.put("bill", billInfo);
+                    }
+                }
                 
                 paymentCards.add(paymentCard);
             }
@@ -306,6 +334,22 @@ public class EmployeeController {
                         response.put("message", stockValidationResult);
                         return response;
                     }
+                    
+                    // Reduce stock quantities for approved orders
+                    String stockReductionResult = reduceStockQuantities(order);
+                    if (stockReductionResult != null) {
+                        response.put("success", false);
+                        response.put("message", "Failed to update stock: " + stockReductionResult);
+                        return response;
+                    }
+                    
+                    // Generate bill for approved orders
+                    String billGenerationResult = generateBill(order);
+                    if (billGenerationResult != null) {
+                        response.put("success", false);
+                        response.put("message", "Failed to generate bill: " + billGenerationResult);
+                        return response;
+                    }
                 }
                 
                 order.setOrderStatus(status.toUpperCase());
@@ -326,6 +370,197 @@ public class EmployeeController {
         }
         
         return response;
+    }
+    
+    /**
+     * Helper method to convert comma-separated product IDs to product names
+     */
+    private String convertProductIdsToNames(String productIds) {
+        if (productIds == null || productIds.trim().isEmpty()) {
+            return "No products";
+        }
+        
+        String[] ids = productIds.split(",");
+        StringBuilder productNames = new StringBuilder();
+        
+        for (int i = 0; i < ids.length; i++) {
+            try {
+                Long productId = Long.parseLong(ids[i].trim());
+                Optional<Product> product = productRepository.findById(productId);
+                if (product.isPresent()) {
+                    productNames.append(product.get().getName());
+                } else {
+                    productNames.append("Unknown Product (ID: ").append(productId).append(")");
+                }
+                
+                // Add comma separator except for the last item
+                if (i < ids.length - 1) {
+                    productNames.append(", ");
+                }
+            } catch (NumberFormatException e) {
+                productNames.append("Invalid Product ID: ").append(ids[i].trim());
+                if (i < ids.length - 1) {
+                    productNames.append(", ");
+                }
+            }
+        }
+        
+        return productNames.toString();
+    }
+    
+    /**
+     * Generates a bill for an approved order
+     * @param order The order to generate bill for
+     * @return null if successful, error message if failed
+     */
+    private String generateBill(Order order) {
+        try {
+            // Check if bill already exists for this payment
+            if (billRepository.existsByPaymentId(order.getPaymentId())) {
+                return null; // Bill already exists, no need to generate again
+            }
+            
+            // Get customer payment details
+            Optional<CustomerPayment> customerPaymentOpt = customerPaymentRepository
+                .findFirstByUsernameAndIsActiveTrueOrderByCreatedAtDesc(order.getUsername());
+            
+            if (!customerPaymentOpt.isPresent()) {
+                return "Customer payment details not found";
+            }
+            
+            CustomerPayment customerPayment = customerPaymentOpt.get();
+            
+            // Convert product IDs to product names
+            String productNames = convertProductIdsToNames(order.getProductIds());
+            
+            // Create bill
+            Bill bill = new Bill(
+                order.getPaymentId(),
+                order.getPaymentId(), // Using paymentId as orderId since they're the same
+                order.getUsername(),
+                productNames,
+                order.getProductQuantities(),
+                order.getSubtotal(),
+                order.getSubtotal(), // Total is same as subtotal for now
+                customerPayment.getBankName(),
+                customerPayment.getAccountNumber()
+            );
+            
+            billRepository.save(bill);
+            return null; // Success
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error generating bill: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Reduces stock quantities for all products in an approved order
+     * @param order The order to process
+     * @return null if successful, error message if failed
+     */
+    private String reduceStockQuantities(Order order) {
+        try {
+            String productIds = order.getProductIds();
+            String productQuantities = order.getProductQuantities();
+            
+            if (productIds == null || productIds.trim().isEmpty() || 
+                productQuantities == null || productQuantities.trim().isEmpty()) {
+                return "Invalid order data";
+            }
+            
+            String[] ids = productIds.split(",");
+            String[] quantities = productQuantities.split(",");
+            
+            if (ids.length != quantities.length) {
+                return "Mismatch between product IDs and quantities";
+            }
+            
+            for (int i = 0; i < ids.length; i++) {
+                try {
+                    Long productId = Long.parseLong(ids[i].trim());
+                    int orderedQuantity = Integer.parseInt(quantities[i].trim());
+                    
+                    Optional<Product> productOpt = productRepository.findById(productId);
+                    if (productOpt.isPresent()) {
+                        Product product = productOpt.get();
+                        int currentStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;
+                        int newStock = currentStock - orderedQuantity;
+                        
+                        // Ensure stock doesn't go below zero (shouldn't happen due to validation, but safety check)
+                        if (newStock < 0) {
+                            return "Stock reduction would result in negative inventory for product: " + product.getName();
+                        }
+                        
+                        product.setStockQuantity(newStock);
+                        productRepository.save(product);
+                    } else {
+                        return "Product with ID " + productId + " not found";
+                    }
+                } catch (NumberFormatException e) {
+                    return "Invalid product ID or quantity format";
+                }
+            }
+            
+            return null; // Success
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error reducing stock quantities: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Gets detailed stock information for all products in an order
+     * @param order The order to analyze
+     * @return List of stock details for each product
+     */
+    private List<Map<String, Object>> getStockDetailsForOrder(Order order) {
+        List<Map<String, Object>> stockDetails = new ArrayList<>();
+        
+        try {
+            String productIds = order.getProductIds();
+            String productQuantities = order.getProductQuantities();
+            
+            if (productIds == null || productIds.trim().isEmpty() || 
+                productQuantities == null || productQuantities.trim().isEmpty()) {
+                return stockDetails;
+            }
+            
+            String[] ids = productIds.split(",");
+            String[] quantities = productQuantities.split(",");
+            
+            if (ids.length != quantities.length) {
+                return stockDetails;
+            }
+            
+            for (int i = 0; i < ids.length; i++) {
+                try {
+                    Long productId = Long.parseLong(ids[i].trim());
+                    int requestedQuantity = Integer.parseInt(quantities[i].trim());
+                    
+                    Optional<Product> productOpt = productRepository.findById(productId);
+                    if (productOpt.isPresent()) {
+                        Product product = productOpt.get();
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("productId", productId);
+                        detail.put("productName", product.getName());
+                        detail.put("requestedQuantity", requestedQuantity);
+                        detail.put("availableStock", product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+                        detail.put("isOutOfStock", product.getStockQuantity() == null || product.getStockQuantity() <= 0);
+                        detail.put("isInsufficientStock", product.getStockQuantity() != null && product.getStockQuantity() < requestedQuantity);
+                        stockDetails.add(detail);
+                    }
+                } catch (NumberFormatException e) {
+                    // Skip invalid entries
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return stockDetails;
     }
     
     /**
@@ -400,6 +635,10 @@ public class EmployeeController {
                 Order order = orderOpt.get();
                 String stockValidationResult = validateStockAvailability(order);
                 
+                // Get detailed stock information for each product
+                List<Map<String, Object>> stockDetails = getStockDetailsForOrder(order);
+                response.put("stockDetails", stockDetails);
+                
                 if (stockValidationResult == null) {
                     response.put("success", true);
                     response.put("canApprove", true);
@@ -417,6 +656,74 @@ public class EmployeeController {
             e.printStackTrace();
             response.put("success", false);
             response.put("message", "Failed to check stock availability");
+        }
+        
+        return response;
+    }
+    
+    // API endpoint to get order summary statistics
+    @GetMapping("/api/order-summary")
+    @ResponseBody
+    public Map<String, Object> getOrderSummary(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.CASHIER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Map<String, Long> summary = orderService.getOrderSummary();
+            response.put("success", true);
+            response.put("summary", summary);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to fetch order summary");
+        }
+        
+        return response;
+    }
+    
+    // Delete order endpoint
+    @DeleteMapping("/api/payments/{orderId}")
+    @ResponseBody
+    public Map<String, Object> deleteOrder(@PathVariable Long orderId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.CASHIER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            // Check if order exists
+            if (!orderService.existsById(orderId)) {
+                response.put("success", false);
+                response.put("message", "Order not found");
+                return response;
+            }
+            
+            // Get order details for logging
+            Optional<Order> orderOpt = orderService.getOrderById(orderId);
+            String orderInfo = orderOpt.isPresent() ? 
+                "Order #" + orderId + " (Customer: " + orderOpt.get().getUsername() + ")" : 
+                "Order #" + orderId;
+            
+            // Delete the order
+            orderService.deleteOrder(orderId);
+            
+            response.put("success", true);
+            response.put("message", "Order deleted successfully: " + orderInfo);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete order: " + e.getMessage());
         }
         
         return response;
@@ -456,5 +763,164 @@ public class EmployeeController {
     @GetMapping("/reviews")
     public String reviewPage(){
         return "review";
+    
+    // Employee Management for IT Assistant
+    
+    // Get all employees
+    @GetMapping("/api/employees")
+    @ResponseBody
+    public Map<String, Object> getAllEmployees(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            List<Employee> employees = employeeService.getAllEmployees();
+            List<Map<String, Object>> employeeList = new ArrayList<>();
+            
+            for (Employee emp : employees) {
+                Map<String, Object> empData = new HashMap<>();
+                empData.put("empid", emp.getEmpid());
+                empData.put("type", emp.getType().getDisplayName());
+                empData.put("isActive", emp.getIsActive());
+                empData.put("createdAt", emp.getCreatedAt());
+                empData.put("updatedAt", emp.getUpdatedAt());
+                employeeList.add(empData);
+            }
+            
+            response.put("success", true);
+            response.put("employees", employeeList);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to fetch employees");
+        }
+        
+        return response;
+    }
+    
+    // Add new employee
+    @PostMapping("/api/employees")
+    @ResponseBody
+    public Map<String, Object> addEmployee(@RequestParam String empid,
+                                          @RequestParam String password,
+                                          @RequestParam String type,
+                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate input
+        if (empid == null || empid.trim().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Employee ID is required");
+            return response;
+        }
+        
+        if (password == null || password.trim().length() < 6) {
+            response.put("success", false);
+            response.put("message", "Password must be at least 6 characters");
+            return response;
+        }
+        
+        if (type == null || type.trim().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Employee type is required");
+            return response;
+        }
+        
+        try {
+            // Check if employee already exists
+            if (employeeService.employeeExists(empid.trim())) {
+                response.put("success", false);
+                response.put("message", "Employee ID already exists");
+                return response;
+            }
+            
+            // Validate employee type
+            Employee.EmployeeType employeeType;
+            try {
+                employeeType = Employee.EmployeeType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                response.put("success", false);
+                response.put("message", "Invalid employee type");
+                return response;
+            }
+            
+            // Create new employee
+            Employee newEmployee = new Employee(empid.trim(), password.trim(), employeeType);
+            employeeService.saveEmployee(newEmployee);
+            
+            response.put("success", true);
+            response.put("message", "Employee added successfully");
+            response.put("employee", Map.of(
+                "empid", newEmployee.getEmpid(),
+                "type", newEmployee.getType().getDisplayName(),
+                "isActive", newEmployee.getIsActive(),
+                "createdAt", newEmployee.getCreatedAt()
+            ));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to add employee");
+        }
+        
+        return response;
+    }
+    
+    // Delete employee (soft delete by setting isActive to false)
+    @DeleteMapping("/api/employees/{empid}")
+    @ResponseBody
+    public Map<String, Object> deleteEmployee(@PathVariable String empid, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Prevent deleting own account
+        if (empid.equals(employee.getEmpid())) {
+            response.put("success", false);
+            response.put("message", "Cannot delete your own account");
+            return response;
+        }
+        
+        try {
+            Optional<Employee> employeeOpt = employeeService.getEmployeeByEmpid(empid);
+            if (employeeOpt.isPresent()) {
+                Employee empToDelete = employeeOpt.get();
+                empToDelete.setIsActive(false);
+                empToDelete.setUpdatedAt(LocalDateTime.now());
+                employeeService.saveEmployee(empToDelete);
+                
+                response.put("success", true);
+                response.put("message", "Employee deleted successfully");
+            } else {
+                response.put("success", false);
+                response.put("message", "Employee not found");
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete employee");
+        }
+        
+        return response;
     }
 }

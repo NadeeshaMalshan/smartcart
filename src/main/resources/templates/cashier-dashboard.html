@@ -87,6 +87,13 @@
         .btn-declined:hover {
             background-color: #fecaca;
         }
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-delete:hover {
+            background-color: #fecaca;
+        }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -135,6 +142,66 @@
                                 </svg>
                                 Back to Dashboard
                             </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Statistics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Total Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="totalOrders">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Pending Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="pendingOrders">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved Orders -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Approved Orders</dt>
+                                    <dd class="text-2xl font-bold text-gray-900" id="approvedOrders">-</dd>
+                                </dl>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,10 +281,37 @@
     </div>
 
     <script>
-        // Load payments on page load
+        // Load payments and summary on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadOrderSummary();
             loadPayments();
         });
+
+        function loadOrderSummary() {
+            fetch('/api/order-summary')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const summary = data.summary;
+                        document.getElementById('totalOrders').textContent = summary.totalOrders || 0;
+                        document.getElementById('pendingOrders').textContent = summary.pendingOrders || 0;
+                        document.getElementById('approvedOrders').textContent = summary.approvedOrders || 0;
+                    } else {
+                        console.error('Failed to load order summary:', data.message);
+                        // Set default values on error
+                        document.getElementById('totalOrders').textContent = '0';
+                        document.getElementById('pendingOrders').textContent = '0';
+                        document.getElementById('approvedOrders').textContent = '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading order summary:', error);
+                    // Set default values on error
+                    document.getElementById('totalOrders').textContent = '0';
+                    document.getElementById('pendingOrders').textContent = '0';
+                    document.getElementById('approvedOrders').textContent = '0';
+                });
+        }
 
         function loadPayments() {
             showLoading();
@@ -294,6 +388,85 @@
                     console.error('Error checking stock availability:', error);
                 });
         }
+        
+        function checkStockAvailabilityForModal(paymentId) {
+            fetch(`/api/payments/${paymentId}/stock-check`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const modalApproveBtn = document.getElementById(`modal-approve-btn-${paymentId}`);
+                        
+                        // Handle modal approve button
+                        if (modalApproveBtn) {
+                            if (!data.canApprove) {
+                                // Disable modal approve button
+                                modalApproveBtn.disabled = true;
+                                modalApproveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                                modalApproveBtn.title = data.message;
+                                
+                                // Add stock warning message to modal
+                                addStockWarningToModal(paymentId, data.message, data.stockDetails);
+                            } else {
+                                // Enable modal approve button
+                                modalApproveBtn.disabled = false;
+                                modalApproveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                modalApproveBtn.title = '';
+                                
+                                // Remove any existing stock warnings
+                                removeStockWarningFromModal(paymentId);
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking stock availability for modal:', error);
+                });
+        }
+        
+        function addStockWarningToModal(paymentId, message, stockDetails) {
+            // Remove existing warning if any
+            removeStockWarningFromModal(paymentId);
+            
+            // Create warning element
+            const warningDiv = document.createElement('div');
+            warningDiv.id = `modal-stock-warning-${paymentId}`;
+            warningDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-4';
+            warningDiv.innerHTML = `
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-red-400 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-medium text-red-800">Cannot Approve Payment</h4>
+                        <p class="text-sm text-red-700 mt-1">${message}</p>
+                        ${stockDetails && stockDetails.length > 0 ? `
+                            <div class="mt-2">
+                                <p class="text-xs font-medium text-red-800">Stock Issues:</p>
+                                <ul class="text-xs text-red-700 mt-1 space-y-1">
+                                    ${stockDetails.map(detail => `
+                                        <li>• ${detail.productName}: Available ${detail.availableStock}, Requested ${detail.requestedQuantity}</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Insert warning before the status update actions
+            const modalContent = document.getElementById('modalContent');
+            const statusActions = modalContent.querySelector('.bg-white.border.border-gray-200.rounded-lg.p-4');
+            if (statusActions) {
+                modalContent.insertBefore(warningDiv, statusActions);
+            }
+        }
+        
+        function removeStockWarningFromModal(paymentId) {
+            const existingWarning = document.getElementById(`modal-stock-warning-${paymentId}`);
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+        }
 
         function displayPayments(payments) {
             const grid = document.getElementById('paymentsGrid');
@@ -330,7 +503,7 @@
                             ${payment.items.map(item => `
                                 <div class="flex justify-between text-sm">
                                     <span class="text-slate-600">${item.name} (x${item.quantity})</span>
-                                    <span class="font-medium">$${item.subtotal.toFixed(2)}</span>
+                                    <span class="font-medium">LKR ${item.subtotal.toFixed(2)}</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -339,7 +512,7 @@
                     <div class="border-t pt-4">
                         <div class="flex justify-between items-center mb-3">
                             <span class="text-lg font-semibold text-slate-800">Total:</span>
-                            <span class="text-lg font-bold text-brand">$${payment.subtotal.toFixed(2)}</span>
+                            <span class="text-lg font-bold text-brand">LKR ${payment.subtotal.toFixed(2)}</span>
                         </div>
                         <div class="flex justify-between text-sm text-slate-500 mb-3">
                             <span>Date: ${formattedDate}</span>
@@ -347,30 +520,42 @@
                         
                         <!-- Status Update Buttons -->
                         <div class="mb-3">
-                            <div class="flex space-x-2 justify-center">
-                                ${payment.orderStatus.toLowerCase() !== 'pending' ? 
-                                    `<button onclick="updatePaymentStatus(${payment.paymentId}, 'PENDING')" 
+                            ${payment.orderStatus.toLowerCase() === 'pending' ? `
+                                <div class="flex space-x-2 justify-center">
+                                    <button onclick="updatePaymentStatus(${payment.paymentId}, 'PENDING')" 
                                             class="status-update-btn btn-pending">
                                         Set Pending
-                                    </button>` : ''}
-                                ${payment.orderStatus.toLowerCase() !== 'approved' ? 
-                                    `<button id="approve-btn-${payment.paymentId}" onclick="updatePaymentStatus(${payment.paymentId}, 'APPROVED')" 
+                                    </button>
+                                    <button id="approve-btn-${payment.paymentId}" onclick="updatePaymentStatus(${payment.paymentId}, 'APPROVED')" 
                                             class="status-update-btn btn-approved">
                                         Approve
-                                    </button>` : ''}
-                                ${payment.orderStatus.toLowerCase() !== 'declined' ? 
-                                    `<button onclick="updatePaymentStatus(${payment.paymentId}, 'DECLINED')" 
+                                    </button>
+                                    <button onclick="updatePaymentStatus(${payment.paymentId}, 'DECLINED')" 
                                             class="status-update-btn btn-declined">
                                         Decline
-                                    </button>` : ''}
-                            </div>
-                            <div id="stock-warning-${payment.paymentId}" class="text-sm text-red-600 mt-2 hidden"></div>
+                                    </button>
+                                </div>
+                                <div id="stock-warning-${payment.paymentId}" class="text-sm text-red-600 mt-2 hidden"></div>
+                            ` : `
+                                <div class="text-center">
+                                    <span class="text-sm text-gray-500">Status cannot be changed after approval/decline</span>
+                                </div>
+                            `}
                         </div>
                         
-                        <button onclick="viewPaymentDetails(${payment.paymentId})" 
-                                class="w-full bg-brand hover:bg-brand-dark text-white py-2 px-4 rounded-lg transition-colors">
-                            View Details
-                        </button>
+                        <div class="flex space-x-2">
+                            <button onclick="viewPaymentDetails(${payment.paymentId})" 
+                                    class="flex-1 bg-brand hover:bg-brand-dark text-white py-2 px-4 rounded-lg transition-colors">
+                                View Details
+                            </button>
+                            <button onclick="deleteOrder(${payment.paymentId})" 
+                                    class="status-update-btn btn-delete px-3 py-2" 
+                                    title="Delete Order">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -417,6 +602,9 @@
             
             const formattedDate = formatDate(payment.createdAt);
             const statusClass = getStatusClass(payment.orderStatus);
+            
+            // Check stock availability for this payment
+            checkStockAvailabilityForModal(payment.paymentId);
             
             // Customer payment details section
             let customerPaymentSection = '';
@@ -565,11 +753,12 @@
                                     <div>
                                         <p class="font-medium text-gray-900">${item.name}</p>
                                         <p class="text-sm text-gray-500">Product ID: ${item.productId}</p>
+                                        <p class="text-sm text-blue-600 font-medium">Available Stock: ${item.stockQuantity}</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-sm text-gray-600">Qty: ${item.quantity}</p>
-                                        <p class="font-medium text-gray-900">$${item.price.toFixed(2)} each</p>
-                                        <p class="font-semibold text-brand">$${item.subtotal.toFixed(2)}</p>
+                                        <p class="font-medium text-gray-900">LKR ${item.price.toFixed(2)} each</p>
+                                        <p class="font-semibold text-brand">LKR ${item.subtotal.toFixed(2)}</p>
                                     </div>
                                 </div>
                             `).join('')}
@@ -580,31 +769,95 @@
                     <div class="bg-brand text-white rounded-lg p-6">
                         <div class="flex justify-between items-center">
                             <span class="text-xl font-semibold">Total Amount:</span>
-                            <span class="text-2xl font-bold">$${payment.subtotal.toFixed(2)}</span>
+                            <span class="text-2xl font-bold">LKR ${payment.subtotal.toFixed(2)}</span>
                         </div>
                     </div>
                     
+                    <!-- Bill Information (for approved orders) -->
+                    ${payment.orderStatus.toLowerCase() === 'approved' && payment.bill ? `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h4 class="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Bill Information
+                            </h4>
+                            <div class="bg-white rounded-lg p-4 border border-green-200">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-700">Bill ID</label>
+                                        <p class="mt-1 text-sm text-green-900 font-mono">#${payment.bill.id}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-700">Payment ID</label>
+                                        <p class="mt-1 text-sm text-green-900 font-mono">#${payment.paymentId}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-700">Bank Name</label>
+                                        <p class="mt-1 text-sm text-green-900 font-medium">${payment.bill.bankName}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-green-700">Account Number</label>
+                                        <p class="mt-1 text-sm text-green-900 font-mono">${payment.bill.maskedAccountNumber}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t pt-4">
+                                    <h5 class="font-semibold text-green-900 mb-3">Order Details</h5>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-green-700">Products:</span>
+                                            <span class="text-green-900 font-medium">${payment.bill.productNames}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-green-700">Quantities:</span>
+                                            <span class="text-green-900 font-medium">${payment.bill.productQuantities}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-green-700">Subtotal:</span>
+                                            <span class="text-green-900 font-medium">LKR ${payment.bill.subtotal.toFixed(2)}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                            <span class="text-green-700">Total Amount:</span>
+                                            <span class="text-green-900">LKR ${payment.bill.total.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t pt-4 mt-4">
+                                    <p class="text-xs text-green-600">
+                                        Bill generated on: ${new Date(payment.bill.createdAt).toLocaleDateString()} at ${new Date(payment.bill.createdAt).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
                     <!-- Status Update Actions -->
                     <div class="bg-white border border-gray-200 rounded-lg p-4">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Update Payment Status</h4>
-                        <div class="flex flex-wrap gap-3">
-                            ${payment.orderStatus.toLowerCase() !== 'pending' ? 
-                                `<button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'PENDING')" 
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Status</h4>
+                        ${payment.orderStatus.toLowerCase() === 'pending' ? `
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'PENDING')" 
                                         class="status-update-btn btn-pending px-4 py-2">
                                     Set to Pending
-                                </button>` : ''}
-                            ${payment.orderStatus.toLowerCase() !== 'approved' ? 
-                                `<button id="modal-approve-btn-${payment.paymentId}" onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'APPROVED')" 
+                                </button>
+                                <button id="modal-approve-btn-${payment.paymentId}" onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'APPROVED')" 
                                         class="status-update-btn btn-approved px-4 py-2">
                                     Approve Payment
-                                </button>` : ''}
-                            ${payment.orderStatus.toLowerCase() !== 'declined' ? 
-                                `<button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'DECLINED')" 
+                                </button>
+                                <button onclick="updatePaymentStatusFromModal(${payment.paymentId}, 'DECLINED')" 
                                         class="status-update-btn btn-declined px-4 py-2">
                                     Decline Payment
-                                </button>` : ''}
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">Current status: <span class="font-medium ${statusClass}">${payment.orderStatus}</span></p>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Current status: <span class="font-medium ${statusClass}">${payment.orderStatus}</span></p>
+                        ` : `
+                            <div class="text-center py-4">
+                                <p class="text-sm text-gray-500 mb-2">Current status: <span class="font-medium ${statusClass}">${payment.orderStatus}</span></p>
+                                <p class="text-xs text-gray-400">Status cannot be changed after approval/decline</p>
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -628,7 +881,33 @@
         }
 
         function refreshPayments() {
+            loadOrderSummary();
             loadPayments();
+        }
+
+        function deleteOrder(orderId) {
+            if (!confirm(`Are you sure you want to delete Order #${orderId}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            fetch(`/api/payments/${orderId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Order #${orderId} deleted successfully`, 'success');
+                    // Refresh the payments and summary to show updated data
+                    loadOrderSummary();
+                    loadPayments();
+                } else {
+                    showNotification(data.message || 'Failed to delete order', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting order:', error);
+                showNotification('Network error. Please try again.', 'error');
+            });
         }
 
         function updatePaymentStatus(paymentId, newStatus) {
@@ -647,7 +926,8 @@
             .then(data => {
                 if (data.success) {
                     showNotification(`Payment status updated to ${newStatus}`, 'success');
-                    // Refresh the payments to show updated status
+                    // Refresh the payments and summary to show updated status
+                    loadOrderSummary();
                     loadPayments();
                 } else {
                     showNotification(data.message || 'Failed to update payment status', 'error');
@@ -675,8 +955,9 @@
             .then(data => {
                 if (data.success) {
                     showNotification(`Payment status updated to ${newStatus}`, 'success');
-                    // Close modal and refresh payments
+                    // Close modal and refresh payments and summary
                     closePaymentModal();
+                    loadOrderSummary();
                     loadPayments();
                 } else {
                     showNotification(data.message || 'Failed to update payment status', 'error');

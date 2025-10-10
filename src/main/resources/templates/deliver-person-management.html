@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Delivery Person Management</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jsPDF and jsPDF-AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .invalid-feedback {
+            display: none;
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        input.is-invalid, select.is-invalid {
+            border-color: #ef4444;
+        }
+        input.is-invalid + .invalid-feedback,
+        select.is-invalid + .invalid-feedback {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-2 text-xl font-bold text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                        <span>SmartCart</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600">Delivery Management</span>
+                    <a href="/employee/dashboard" class="text-slate-500 hover:text-brand">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <!-- Header Section -->
+            <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800 mb-2">Delivery Person Management</h1>
+                            <p class="text-slate-600">Manage delivery personnel and their information</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button id="generateReportBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center shadow-sm">
+                                <i class="fas fa-file-pdf mr-2"></i>
+                                Generate Report
+                            </button>
+                            <button id="addDeliveryPersonBtn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center shadow-sm">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Delivery Person
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input type="text" id="searchInput" placeholder="Search by name, email, or vehicle number..."
+                                       class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-slate-900 bg-white">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-slate-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <select id="vehicleTypeFilter" class="border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-slate-900 bg-white">
+                                <option value="">All Vehicle Types</option>
+                                <option value="BIKE">Bike</option>
+                                <option value="THREEWHEEL">Three Wheeler</option>
+                                <option value="LORRY">Lorry</option>
+                            </select>
+                            <select id="statusFilter" class="border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-slate-900 bg-white">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Persons Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-900 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-900 uppercase tracking-wider">Contact Info</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-900 uppercase tracking-wider">Vehicle Details</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-900 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-900 uppercase tracking-wider">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="deliveryPersonsTableBody" class="bg-white divide-y divide-slate-200">
+                        <!-- Table rows will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-600">Loading delivery persons...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noRecordsMessage" class="hidden p-8 text-center text-slate-600 border-t border-slate-200">
+                    No delivery persons found.
+                </div>
+            </div>
+
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Delivery Person Modal -->
+<div id="createModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+    <div class="modal-overlay absolute w-full h-full bg-black opacity-50"></div>
+    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+        <div class="modal-content py-6 text-left px-6">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                <p class="text-xl font-semibold text-gray-800">Add New Delivery Person</p>
+                <button class="modal-close cursor-pointer z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-times text-gray-500 hover:text-gray-700"></i>
+                </button>
+            </div>
+            <form id="createDeliveryPersonForm" class="mt-6">
+                <div class="mb-4">
+                    <label for="createName" class="block text-gray-700 text-sm font-medium mb-2">Name</label>
+                    <input type="text" id="createName" name="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid name (3-100 characters)</div>
+                </div>
+                <div class="mb-4">
+                    <label for="createEmail" class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="createEmail" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid email address</div>
+                </div>
+                <div class="mb-4">
+                    <label for="createContactNumber" class="block text-gray-700 text-sm font-medium mb-2">Contact Number</label>
+                    <input type="text" id="createContactNumber" name="contactNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid contact number (10 digits)</div>
+                </div>
+                <div class="mb-4">
+                    <label for="createVehicleType" class="block text-gray-700 text-sm font-medium mb-2">Vehicle Type</label>
+                    <select id="createVehicleType" name="vehicleType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                        <option value="">Select Vehicle Type</option>
+                        <option value="BIKE">Bike</option>
+                        <option value="THREEWHEEL">Three Wheeler</option>
+                        <option value="LORRY">Lorry</option>
+                    </select>
+                    <div class="invalid-feedback">Please select a vehicle type</div>
+                </div>
+                <div class="mb-6">
+                    <label for="createVehicleNumber" class="block text-gray-700 text-sm font-medium mb-2">Vehicle Number</label>
+                    <input type="text" id="createVehicleNumber" name="vehicleNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid vehicle number</div>
+                </div>
+                <div class="flex justify-end pt-4 border-t border-gray-200">
+                    <button type="button" class="modal-close px-6 py-3 bg-gray-100 text-gray-700 rounded-lg mr-3 hover:bg-gray-200 transition-colors font-medium">Cancel</button>
+                    <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        <i class="fas fa-save mr-2"></i>Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Delivery Person Modal -->
+<div id="editModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+    <div class="modal-overlay absolute w-full h-full bg-black opacity-50"></div>
+    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+        <div class="modal-content py-6 text-left px-6">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                <p class="text-xl font-semibold text-gray-800">Edit Delivery Person</p>
+                <button class="modal-close cursor-pointer z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-times text-gray-500 hover:text-gray-700"></i>
+                </button>
+            </div>
+            <form id="editDeliveryPersonForm" class="mt-6">
+                <input type="hidden" id="editId">
+                <div class="mb-4">
+                    <label for="editName" class="block text-gray-700 text-sm font-medium mb-2">Name</label>
+                    <input type="text" id="editName" name="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid name (3-100 characters)</div>
+                </div>
+                <div class="mb-4">
+                    <label for="editEmail" class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="editEmail" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid email address</div>
+                </div>
+                <div class="mb-4">
+                    <label for="editContactNumber" class="block text-gray-700 text-sm font-medium mb-2">Contact Number</label>
+                    <input type="text" id="editContactNumber" name="contactNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid contact number (10 digits)</div>
+                </div>
+                <div class="mb-4">
+                    <label for="editVehicleType" class="block text-gray-700 text-sm font-medium mb-2">Vehicle Type</label>
+                    <select id="editVehicleType" name="vehicleType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                        <option value="">Select Vehicle Type</option>
+                        <option value="BIKE">Bike</option>
+                        <option value="THREEWHEEL">Three Wheeler</option>
+                        <option value="LORRY">Lorry</option>
+                    </select>
+                    <div class="invalid-feedback">Please select a vehicle type</div>
+                </div>
+                <div class="mb-4">
+                    <label for="editVehicleNumber" class="block text-gray-700 text-sm font-medium mb-2">Vehicle Number</label>
+                    <input type="text" id="editVehicleNumber" name="vehicleNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                    <div class="invalid-feedback">Please enter a valid vehicle number</div>
+                </div>
+                <div class="mb-6">
+                    <label for="editIsActive" class="block text-gray-700 text-sm font-medium mb-2">Status</label>
+                    <select id="editIsActive" name="isActive" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white" required>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end pt-4 border-t border-gray-200">
+                    <button type="button" class="modal-close px-6 py-3 bg-gray-100 text-gray-700 rounded-lg mr-3 hover:bg-gray-200 transition-colors font-medium">Cancel</button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        <i class="fas fa-save mr-2"></i>Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+    <div class="modal-overlay absolute w-full h-full bg-black opacity-50"></div>
+    <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto">
+        <div class="modal-content py-6 text-left px-6">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                <p class="text-xl font-semibold text-gray-800">Confirm Action</p>
+                <button class="modal-close cursor-pointer z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-times text-gray-500 hover:text-gray-700"></i>
+                </button>
+            </div>
+            <p id="confirmationMessage" class="text-gray-700 mb-6 mt-4">Are you sure you want to perform this action?</p>
+            <div class="flex justify-end pt-4 border-t border-gray-200">
+                <button type="button" class="modal-close px-6 py-3 bg-gray-100 text-gray-700 rounded-lg mr-3 hover:bg-gray-200 transition-colors font-medium">Cancel</button>
+                <button id="confirmActionBtn" type="button" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                    <i class="fas fa-check mr-2"></i>Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 right-4 z-50 opacity-0 transition-opacity duration-300 transform translate-y-[-20px] transition-transform duration-300">
+    <div class="bg-white text-gray-800 px-6 py-4 rounded-lg border border-gray-200 shadow-lg flex items-center">
+        <i id="toastIcon" class="fas fa-check-circle mr-3 text-green-500"></i>
+        <span id="toastMessage">Operation successful</span>
+    </div>
+</div>
+
+<script>
+    // DOM Elements
+    const deliveryPersonsTableBody = document.getElementById('deliveryPersonsTableBody');
+    const noRecordsMessage = document.getElementById('noRecordsMessage');
+    const searchInput = document.getElementById('searchInput');
+    const vehicleTypeFilter = document.getElementById('vehicleTypeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const addDeliveryPersonBtn = document.getElementById('addDeliveryPersonBtn');
+    const generateReportBtn = document.getElementById('generateReportBtn');
+
+    // Modals
+    const createModal = document.getElementById('createModal');
+    const editModal = document.getElementById('editModal');
+    const confirmationModal = document.getElementById('confirmationModal');
+
+    // Forms
+    const createDeliveryPersonForm = document.getElementById('createDeliveryPersonForm');
+    const editDeliveryPersonForm = document.getElementById('editDeliveryPersonForm');
+
+    // Toast
+    const toast = document.getElementById('toast');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // API Base URL
+    const API_BASE_URL = '/api/delivery-persons';
+
+    // Store all delivery persons
+    let allDeliveryPersons = [];
+
+    // Regex Patterns for Validation
+    const patterns = {
+        name: /^[A-Za-z\s]{3,100}$/,
+        email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        contactNumber: /^[0-9]{10}$/,
+        vehicleNumber: /^[A-Z0-9-]{2,20}$/
+    };
+
+    // Fetch all delivery persons
+    async function fetchDeliveryPersons() {
+        try {
+            const response = await fetch(API_BASE_URL);
+            if (!response.ok) {
+                throw new Error('Failed to fetch delivery persons');
+            }
+
+            allDeliveryPersons = await response.json();
+            renderDeliveryPersons(allDeliveryPersons);
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error fetching delivery persons', 'error');
+        }
+    }
+
+    // Render delivery persons table
+    function renderDeliveryPersons(deliveryPersons) {
+        if (deliveryPersons.length === 0) {
+            deliveryPersonsTableBody.innerHTML = '';
+            noRecordsMessage.classList.remove('hidden');
+            return;
+        }
+
+        noRecordsMessage.classList.add('hidden');
+        deliveryPersonsTableBody.innerHTML = deliveryPersons.map(person => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-semibold text-black">${person.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-black font-medium">${person.email}</div>
+                        <div class="text-sm text-gray-600">${person.contactNumber}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-black font-medium">${formatVehicleType(person.vehicleType)}</div>
+                        <div class="text-sm text-gray-600">${person.vehicleNumber}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-md border-2 ${person.isActive ? 'bg-white text-black border-black' : 'bg-black text-white border-black'}">
+                            ${person.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="bg-black text-white hover:bg-gray-800 px-3 py-2 rounded-md mr-2 transition-colors border border-black" onclick="openEditModal(${person.id})" title="Edit">
+                            <i class="fas fa-edit text-white"></i>
+                        </button>
+                        <button class="bg-white text-black hover:bg-gray-100 px-3 py-2 rounded-md transition-colors border-2 border-black" onclick="confirmDelete(${person.id})" title="Delete">
+                            <i class="fas fa-trash-alt text-black"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+    }
+
+    // Format vehicle type for display
+    function formatVehicleType(type) {
+        switch(type) {
+            case 'BIKE': return 'Bike';
+            case 'THREEWHEEL': return 'Three Wheeler';
+            case 'LORRY': return 'Lorry';
+            default: return type;
+        }
+    }
+
+    // Filter delivery persons
+    function filterDeliveryPersons() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const vehicleType = vehicleTypeFilter.value;
+        const status = statusFilter.value;
+
+        const filtered = allDeliveryPersons.filter(person => {
+            // Search term filter
+            const matchesSearch =
+                person.name.toLowerCase().includes(searchTerm) ||
+                person.email.toLowerCase().includes(searchTerm) ||
+                person.vehicleNumber.toLowerCase().includes(searchTerm) ||
+                person.contactNumber.includes(searchTerm);
+
+            // Vehicle type filter
+            const matchesVehicleType = vehicleType === '' || person.vehicleType === vehicleType;
+
+            // Status filter
+            const matchesStatus =
+                status === '' ||
+                (status === 'active' && person.isActive) ||
+                (status === 'inactive' && !person.isActive);
+
+            return matchesSearch && matchesVehicleType && matchesStatus;
+        });
+
+        renderDeliveryPersons(filtered);
+    }
+
+    // Open create modal
+    function openCreateModal() {
+        createDeliveryPersonForm.reset();
+        resetValidation(createDeliveryPersonForm);
+        createModal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    // Open edit modal
+    function openEditModal(id) {
+        const person = allDeliveryPersons.find(p => p.id === id);
+        if (!person) return;
+
+        document.getElementById('editId').value = person.id;
+        document.getElementById('editName').value = person.name;
+        document.getElementById('editEmail').value = person.email;
+        document.getElementById('editContactNumber').value = person.contactNumber;
+        document.getElementById('editVehicleType').value = person.vehicleType;
+        document.getElementById('editVehicleNumber').value = person.vehicleNumber;
+        document.getElementById('editIsActive').value = person.isActive.toString();
+
+        resetValidation(editDeliveryPersonForm);
+        editModal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    // Confirm delete
+    function confirmDelete(id) {
+        const person = allDeliveryPersons.find(p => p.id === id);
+        if (!person) return;
+
+        document.getElementById('confirmationMessage').textContent = `Are you sure you want to delete ${person.name}?`;
+
+        document.getElementById('confirmActionBtn').onclick = () => {
+            deleteDeliveryPerson(id);
+            closeModal(confirmationModal);
+        };
+
+        confirmationModal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    // Close modal
+    function closeModal(modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // Create delivery person
+    async function createDeliveryPerson(formData) {
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create delivery person');
+            }
+
+            const newPerson = await response.json();
+            allDeliveryPersons.push(newPerson);
+            renderDeliveryPersons(allDeliveryPersons);
+            showToast('Delivery person created successfully', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error creating delivery person', 'error');
+        }
+    }
+
+    // Update delivery person
+    async function updateDeliveryPerson(id, formData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update delivery person');
+            }
+
+            const updatedPerson = await response.json();
+            window.location.reload()
+            renderDeliveryPersons(allDeliveryPersons);
+            showToast('Delivery person updated successfully', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error updating delivery person', 'error');
+        }
+    }
+
+    // Delete delivery person
+    async function deleteDeliveryPerson(id) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete delivery person');
+            }
+
+            allDeliveryPersons = allDeliveryPersons.filter(p => p.id !== id);
+            renderDeliveryPersons(allDeliveryPersons);
+            showToast('Delivery person deleted successfully', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error deleting delivery person', 'error');
+        }
+    }
+
+    // Generate PDF report
+    function generatePDFReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Delivery Persons Report', 14, 22);
+
+        // Add date
+        doc.setFontSize(11);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Prepare table data
+        const tableColumn = ["Name", "Email", "Contact", "Vehicle Type", "Vehicle Number", "Status"];
+        const tableRows = allDeliveryPersons.map(person => [
+            person.name,
+            person.email,
+            person.contactNumber,
+            formatVehicleType(person.vehicleType),
+            person.vehicleNumber,
+            person.isActive ? 'Active' : 'Inactive'
+        ]);
+
+        // Generate table
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 40,
+            styles: { fontSize: 10, cellPadding: 3 },
+            headStyles: { fillColor: [66, 139, 202] }
+        });
+
+        // Save PDF
+        doc.save('delivery_persons_report.pdf');
+        showToast('Report generated successfully', 'success');
+    }
+
+    // Validate form
+    function validateForm(form) {
+        let isValid = true;
+
+        // Validate name
+        const nameInput = form.querySelector('[name="name"]');
+        if (!patterns.name.test(nameInput.value)) {
+            nameInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            nameInput.classList.remove('is-invalid');
+        }
+
+        // Validate email
+        const emailInput = form.querySelector('[name="email"]');
+        if (!patterns.email.test(emailInput.value)) {
+            emailInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            emailInput.classList.remove('is-invalid');
+        }
+
+        // Validate contact number
+        const contactInput = form.querySelector('[name="contactNumber"]');
+        if (!patterns.contactNumber.test(contactInput.value)) {
+            contactInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            contactInput.classList.remove('is-invalid');
+        }
+
+        // Validate vehicle type
+        const vehicleTypeInput = form.querySelector('[name="vehicleType"]');
+        if (!vehicleTypeInput.value) {
+            vehicleTypeInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            vehicleTypeInput.classList.remove('is-invalid');
+        }
+
+        // Validate vehicle number
+        const vehicleNumberInput = form.querySelector('[name="vehicleNumber"]');
+        if (!patterns.vehicleNumber.test(vehicleNumberInput.value)) {
+            vehicleNumberInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            vehicleNumberInput.classList.remove('is-invalid');
+        }
+
+        return isValid;
+    }
+
+    // Reset form validation
+    function resetValidation(form) {
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.classList.remove('is-invalid');
+        });
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        toastMessage.textContent = message;
+
+        if (type === 'success') {
+            toastIcon.className = 'fas fa-check-circle mr-3 text-white';
+            toast.querySelector('div').className = 'bg-black text-white px-6 py-4 rounded-md border-2 border-black shadow-lg flex items-center';
+        } else {
+            toastIcon.className = 'fas fa-exclamation-circle mr-3 text-white';
+            toast.querySelector('div').className = 'bg-black text-white px-6 py-4 rounded-md border-2 border-black shadow-lg flex items-center';
+        }
+
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+        }, 3000);
+    }
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch delivery persons on page load
+        fetchDeliveryPersons();
+
+        // Add event listeners for search and filters
+        searchInput.addEventListener('input', filterDeliveryPersons);
+        vehicleTypeFilter.addEventListener('change', filterDeliveryPersons);
+        statusFilter.addEventListener('change', filterDeliveryPersons);
+
+        // Add button event listeners
+        addDeliveryPersonBtn.addEventListener('click', openCreateModal);
+        generateReportBtn.addEventListener('click', generatePDFReport);
+
+        // Modal close buttons
+        document.querySelectorAll('.modal-close').forEach(button => {
+            button.addEventListener('click', () => {
+                closeModal(button.closest('.modal'));
+            });
+        });
+
+        // Form submissions
+        createDeliveryPersonForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!validateForm(createDeliveryPersonForm)) return;
+
+            const formData = {
+                name: document.getElementById('createName').value,
+                email: document.getElementById('createEmail').value,
+                contactNumber: document.getElementById('createContactNumber').value,
+                vehicleType: document.getElementById('createVehicleType').value,
+                vehicleNumber: document.getElementById('createVehicleNumber').value,
+                isActive: true
+            };
+
+            createDeliveryPerson(formData);
+            closeModal(createModal);
+        });
+
+        editDeliveryPersonForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!validateForm(editDeliveryPersonForm)) return;
+
+            const id = document.getElementById('editId').value;
+            const formData = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                contactNumber: document.getElementById('editContactNumber').value,
+                vehicleType: document.getElementById('editVehicleType').value,
+                vehicleNumber: document.getElementById('editVehicleNumber').value,
+                isActive: document.getElementById('editIsActive').value === 'true'
+            };
+
+            updateDeliveryPerson(id, formData);
+            closeModal(editModal);
+        });
+    });
+
+    // Make functions available globally for onclick handlers
+    window.openEditModal = openEditModal;
+    window.confirmDelete = confirmDelete;
+</script>
+</body>
+</html>
