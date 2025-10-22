@@ -193,13 +193,17 @@ public class PaymentController {
                 return "{\"success\": false, \"message\": \"Account number is required\"}";
             }
             
-            // Parse subtotal
+            // Parse subtotal from frontend
             BigDecimal subtotalAmount;
             try {
                 subtotalAmount = new BigDecimal(subtotal);
             } catch (NumberFormatException e) {
                 return "{\"success\": false, \"message\": \"Invalid subtotal format\"}";
             }
+            
+            // Add delivery fee to subtotal (LKR 350)
+            BigDecimal deliveryFee = new BigDecimal("350.00");
+            BigDecimal totalWithDelivery = subtotalAmount.add(deliveryFee);
             
             // Save payment details to customer_payment table
             CustomerPayment paymentDetails = new CustomerPayment(
@@ -212,11 +216,12 @@ public class PaymentController {
             customerPaymentRepository.save(paymentDetails);
             
             // Create and save order to payment table
+            // Note: subtotal column now stores total with delivery fee (subtotal + 350)
             Order order = new Order(
                 customer.getUsername(),
                 productIds.trim(),
                 productQuantities.trim(),
-                subtotalAmount,
+                totalWithDelivery, // Save total (subtotal + delivery fee) in subtotal column
                 payslipLocationPath != null ? payslipLocationPath.trim() : null
             );
             

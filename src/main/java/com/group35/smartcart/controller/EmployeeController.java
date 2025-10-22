@@ -433,6 +433,9 @@ public class EmployeeController {
             // Convert product IDs to product names
             String productNames = convertProductIdsToNames(order.getProductIds());
             
+            // Note: order.getSubtotal() already includes delivery fee (LKR 350)
+            // No need to add delivery fee again
+            
             // Create bill
             Bill bill = new Bill(
                 order.getPaymentId(),
@@ -440,8 +443,8 @@ public class EmployeeController {
                 order.getUsername(),
                 productNames,
                 order.getProductQuantities(),
-                order.getSubtotal(),
-                order.getSubtotal(), // Total is same as subtotal for now
+                order.getSubtotal(), // This already includes delivery fee
+                order.getSubtotal(), // Total is same as subtotal (both include delivery fee)
                 customerPayment.getBankName(),
                 customerPayment.getAccountNumber()
             );

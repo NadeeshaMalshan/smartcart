@@ -139,12 +139,8 @@
                                     <span id="subtotal" class="font-semibold">LKR 0.00</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-600">Delivery</span>
-                                    <span class="font-semibold text-green-600">FREE</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Tax (15%)</span>
-                                    <span id="tax" class="font-semibold">LKR 0.00</span>
+                                    <span class="text-slate-600">Delivery Fee</span>
+                                    <span id="delivery-fee" class="font-semibold">LKR 350.00</span>
                                 </div>
                                 <hr class="border-slate-200">
                                 <div class="flex justify-between text-lg font-bold">
@@ -289,12 +285,11 @@
         
         function renderOrderSummary() {
             const subtotalElement = document.getElementById('subtotal');
-            const taxElement = document.getElementById('tax');
             const totalElement = document.getElementById('total');
             
             if (selectedItems.length === 0) {
                 subtotalElement.textContent = 'LKR 0.00';
-                taxElement.textContent = 'LKR 0.00';
+                document.getElementById('delivery-fee').textContent = 'LKR 0.00';
                 totalElement.textContent = 'LKR 0.00';
                 return;
             }
@@ -306,11 +301,11 @@
                 return sum + ((item.price || 0) * item.quantity);
             }, 0);
             
-            const tax = subtotal * 0.15; // 15% tax
-            const total = subtotal + tax;
+            const deliveryFee = 350.00; // LKR 350 delivery fee
+            const total = subtotal + deliveryFee;
             
             subtotalElement.textContent = `LKR ${subtotal.toFixed(2)}`;
-            taxElement.textContent = `LKR ${tax.toFixed(2)}`;
+            document.getElementById('delivery-fee').textContent = `LKR ${deliveryFee.toFixed(2)}`;
             totalElement.textContent = `LKR ${total.toFixed(2)}`;
         }
         
