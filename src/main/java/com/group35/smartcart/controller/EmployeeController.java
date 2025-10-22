@@ -5,10 +5,12 @@ import com.group35.smartcart.entity.Order;
 import com.group35.smartcart.entity.Product;
 import com.group35.smartcart.entity.CustomerPayment;
 import com.group35.smartcart.entity.Bill;
+import com.group35.smartcart.entity.Stock;
 import com.group35.smartcart.repository.OrderRepository;
 import com.group35.smartcart.repository.ProductRepository;
 import com.group35.smartcart.repository.CustomerPaymentRepository;
 import com.group35.smartcart.repository.BillRepository;
+import com.group35.smartcart.repository.StockRepository;
 import com.group35.smartcart.service.EmployeeService;
 import com.group35.smartcart.service.OrderService;
 import jakarta.servlet.http.HttpSession;
@@ -52,6 +54,9 @@ public class EmployeeController {
     
     @Autowired
     private OrderService orderService;
+    
+    @Autowired
+    private StockRepository stockRepository;
     
     // Employee Login Page
     @GetMapping("/employee/login")
@@ -144,7 +149,57 @@ public class EmployeeController {
             return "redirect:/employee/login";
         }
         
+        // Fetch all products from database
+        List<Product> allProducts = productRepository.findAll();
+        
+        // Calculate statistics
+        int totalProducts = allProducts.size();
+        
+        int availableProducts = (int) allProducts.stream()
+            .filter(product -> product.getStockQuantity() != null && product.getStockQuantity() > 0)
+            .count();
+        
+        int outOfStockProducts = (int) allProducts.stream()
+            .filter(product -> product.getStockQuantity() == null || product.getStockQuantity() == 0)
+            .count();
+        
+        // Low stock items (stockQuantity <= 5 and > 0)
+        List<Product> lowStockItems = allProducts.stream()
+            .filter(product -> product.getStockQuantity() != null && product.getStockQuantity() > 0 && product.getStockQuantity() <= 5)
+            .collect(Collectors.toList());
+        
+        boolean hasLowStock = !lowStockItems.isEmpty();
+        
+        // Group products by category for pie chart
+        Map<String, Integer> categoryStockMap = allProducts.stream()
+            .filter(product -> product.getCategory() != null)
+            .collect(Collectors.groupingBy(
+                Product::getCategory,
+                Collectors.summingInt(product -> product.getStockQuantity() != null ? product.getStockQuantity() : 0)
+            ));
+        
+        List<String> categories = new ArrayList<>(categoryStockMap.keySet());
+        List<Integer> categoryValues = categories.stream()
+            .map(categoryStockMap::get)
+            .collect(Collectors.toList());
+        
+        // For monthly data, we'll use mock data since Product doesn't have purchase date
+        // In a real scenario, you'd track this in a separate table
+        List<String> months = Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun");
+        List<Integer> monthlyPurchases = Arrays.asList(45, 52, 38, 65, 48, 55);
+        
+        // Add all attributes to model
         model.addAttribute("employee", employee);
+        model.addAttribute("totalStocks", totalProducts);
+        model.addAttribute("availableStocks", availableProducts);
+        model.addAttribute("expiredStocks", outOfStockProducts);
+        model.addAttribute("hasLowStock", hasLowStock);
+        model.addAttribute("lowStockItems", lowStockItems);
+        model.addAttribute("categories", categories);
+        model.addAttribute("categoryValues", categoryValues);
+        model.addAttribute("months", months);
+        model.addAttribute("monthlyPurchases", monthlyPurchases);
+        
         return "store-manager-dashboard";
     }
     
