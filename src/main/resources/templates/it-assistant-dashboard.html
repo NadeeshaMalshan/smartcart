@@ -129,6 +129,45 @@
         </div>
     </div>
 
+    <!-- Update Password Modal -->
+    <div id="updatePasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800">Update Employee Password</h3>
+            </div>
+            <form id="updatePasswordForm" class="px-6 py-4">
+                <input type="hidden" id="updateEmpid" name="empid">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Employee ID</label>
+                    <input type="text" id="displayEmpid" readonly 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600">
+                </div>
+                <div class="mb-4">
+                    <label for="newPassword" class="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" required 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="Enter new password (min 6 characters)">
+                </div>
+                <div class="mb-4">
+                    <label for="confirmPassword" class="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required 
+                           class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="Confirm new password">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeUpdatePasswordModal()" 
+                            class="px-4 py-2 text-sm bg-slate-200 text-slate-700 rounded hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                        Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- JavaScript for Employee Management -->
     <script>
         // Load employees on page load
@@ -207,7 +246,7 @@
             }
             
             employeeList.innerHTML = employees.map(emp => `
-                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border ${emp.isActive ? 'border-slate-200' : 'border-red-200 bg-red-50'}">
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
                     <div class="flex-1">
                         <div class="flex items-center space-x-4">
                             <div>
@@ -219,21 +258,21 @@
                                 ${emp.updatedAt ? `<p>Updated: ${new Date(emp.updatedAt).toLocaleDateString()}</p>` : ''}
                             </div>
                             <div class="flex items-center">
-                                <span class="px-2 py-1 text-xs rounded-full ${emp.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                    ${emp.isActive ? 'Active' : 'Inactive'}
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                    Active
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        ${emp.isActive ? `
-                            <button onclick="deleteEmployee('${emp.empid}')" 
-                                    class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
-                                Delete
-                            </button>
-                        ` : `
-                            <span class="px-3 py-1 text-sm text-slate-500">Deleted</span>
-                        `}
+                    <div class="ml-4 flex space-x-2">
+                        <button onclick="showUpdatePasswordModal('${emp.empid}')" 
+                                class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            Update Password
+                        </button>
+                        <button onclick="deleteEmployee('${emp.empid}')" 
+                                class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                            Delete
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -285,6 +324,70 @@
                 }
             }, 5000);
         }
+
+        // Show update password modal
+        function showUpdatePasswordModal(empid) {
+            document.getElementById('updateEmpid').value = empid;
+            document.getElementById('displayEmpid').value = empid;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('updatePasswordModal').classList.remove('hidden');
+        }
+
+        // Close update password modal
+        function closeUpdatePasswordModal() {
+            document.getElementById('updatePasswordModal').classList.add('hidden');
+            document.getElementById('updatePasswordForm').reset();
+        }
+
+        // Handle update password form submission
+        document.getElementById('updatePasswordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const empid = document.getElementById('updateEmpid').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate passwords
+            if (newPassword.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            // Submit to server
+            fetch(`/api/employees/${encodeURIComponent(empid)}/password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `newPassword=${encodeURIComponent(newPassword)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    closeUpdatePasswordModal();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Failed to update password', 'error');
+            });
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('updatePasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUpdatePasswordModal();
+            }
+        });
     </script>
 
 </body>
