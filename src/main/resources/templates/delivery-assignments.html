@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Delivery Assignments</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .text-brand { color: #16a34a; }
+        .bg-brand { background-color: #16a34a; }
+        .border-brand { border-color: #16a34a; }
+        .hover-bg-brand-dark:hover { background-color: #15803d; }
+        .header-shadow { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .assignment-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .assignment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-assigned {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-picked_up {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-delivered {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .loading-spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #16a34a;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+            min-width: 300px;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background-color: #10b981;
+        }
+        .toast.error {
+            background-color: #ef4444;
+        }
+        .toast.warning {
+            background-color: #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="bg-white min-h-screen">
+        <!-- Header -->
+        <header class="bg-white sticky top-0 z-50 header-shadow">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <a href="/" class="flex items-center space-x-2 text-2xl font-bold text-brand">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                    <span>SmartCart</span>
+                </a>
+                
+                <!-- Navigation -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-600 font-medium">Delivery Assignments</span>
+                    <a href="/" class="bg-brand text-white px-6 py-2 rounded-full hover-bg-brand-dark">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Page Header -->
+            <div class="max-w-6xl mx-auto mb-8">
+                <h1 class="text-3xl font-bold text-slate-800 mb-2 text-center">Delivery Assignments</h1>
+                <p class="text-slate-600 text-center">View and monitor all delivery assignments</p>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="max-w-6xl mx-auto mb-8">
+                <div class="bg-white border border-slate-200 rounded-xl p-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-brand">
+                            <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+                        </svg>
+                        Filters
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="statusFilter" class="block text-sm font-medium text-slate-700 mb-2">Filter by Status</label>
+                            <select id="statusFilter" onchange="filterAssignments()" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                                <option value="">All Statuses</option>
+                                <option value="ASSIGNED">Assigned</option>
+                                <option value="PICKED_UP">Picked Up</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="deliveryPersonFilter" class="block text-sm font-medium text-slate-700 mb-2">Filter by Delivery Person</label>
+                            <select id="deliveryPersonFilter" onchange="filterAssignments()" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                                <option value="">All Delivery Persons</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">Search</label>
+                            <input type="text" id="searchInput" onkeyup="filterAssignments()" placeholder="Search by customer name, notes..." class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-end">
+                        <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg hover:bg-slate-300 font-semibold">
+                            Clear Filters
+                        </button>
+                        <button onclick="refreshAssignments()" class="bg-brand text-white px-6 py-2 rounded-lg hover-bg-brand-dark font-semibold ml-3">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="max-w-6xl mx-auto text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                <p class="mt-2 text-slate-600">Loading assignments...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="hidden max-w-6xl mx-auto bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-red-800">Error loading assignments</h3>
+                <p id="errorMessage" class="mt-1 text-sm text-red-600"></p>
+                <div class="mt-6">
+                    <button onclick="refreshAssignments()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden max-w-6xl mx-auto text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-slate-800">No assignments found</h3>
+                <p class="mt-1 text-sm text-slate-600">No delivery assignments match your current filters.</p>
+            </div>
+
+            <!-- Assignments Grid -->
+            <div id="assignmentsGrid" class="hidden max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Assignment cards will be populated here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="flex items-center">
+            <svg id="toastIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script>
+
+        let currentUser = localStorage.getItem('currentUser');
+        let currentUserName;
+        if (currentUser) {
+            currentUser = JSON.parse(currentUser);
+            currentUserName = currentUser.username;
+        }
+
+        // Global variables
+        let assignments = [];
+        let filteredAssignments = [];
+        const API_BASE_URL = '/api/delivery-assignments';
+
+        // DOM elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const emptyState = document.getElementById('emptyState');
+        const assignmentsGrid = document.getElementById('assignmentsGrid');
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAssignments();
+        });
+
+        // Load assignments from API
+        async function loadAssignments() {
+            showLoading();
+            try {
+                const response = await fetch(API_BASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                assignments = await response.json();
+                assignments = assignments.filter(assignment => assignment.order.username === currentUserName);
+                filteredAssignments = [...assignments];
+                
+                populateDeliveryPersonFilter();
+                renderAssignments();
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                showError(`Failed to load assignments: ${error.message}`);
+            }
+        }
+
+        // Populate delivery person filter dropdown
+        function populateDeliveryPersonFilter() {
+            const filterSelect = document.getElementById('deliveryPersonFilter');
+            
+            // Clear existing options except the first one
+            filterSelect.innerHTML = '<option value="">All Delivery Persons</option>';
+            
+            // Get unique delivery persons
+            const uniqueDeliveryPersons = new Map();
+            assignments.forEach(assignment => {
+                const person = assignment.deliveryPerson;
+                if (!uniqueDeliveryPersons.has(person.id)) {
+                    uniqueDeliveryPersons.set(person.id, person);
+                }
+            });
+            
+            // Add options for each unique delivery person
+            uniqueDeliveryPersons.forEach(person => {
+                const option = document.createElement('option');
+                option.value = person.id;
+                option.textContent = `${person.name} (${person.vehicleType})`;
+                filterSelect.appendChild(option);
+            });
+        }
+
+        // Render assignments
+        function renderAssignments() {
+            if (filteredAssignments.length === 0) {
+                showEmpty();
+                return;
+            }
+
+            showAssignments();
+            assignmentsGrid.innerHTML = '';
+
+            filteredAssignments.forEach(assignment => {
+                const card = createAssignmentCard(assignment);
+                assignmentsGrid.appendChild(card);
+            });
+        }
+
+        // Create assignment card
+        function createAssignmentCard(assignment) {
+            const card = document.createElement('div');
+            card.className = 'assignment-card bg-white border border-slate-200 rounded-xl p-6';
+            
+            const statusClass = `status-${assignment.status.toLowerCase()}`;
+            const statusText = assignment.status.replace('_', ' ');
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Assignment #${assignment.id}</h3>
+                        <p class="text-sm text-slate-600">Order #${assignment.order.paymentId}</p>
+                    </div>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Customer:</p>
+                            <p class="text-sm text-slate-600">${assignment.order.username}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Delivery Person:</p>
+                            <p class="text-sm text-slate-600">${assignment.deliveryPerson.name}</p>
+                            <p class="text-xs text-slate-500">${assignment.deliveryPerson.vehicleType} - ${assignment.deliveryPerson.vehicleNumber}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
+                            <circle cx="8" cy="21" r="1"/>
+                            <circle cx="19" cy="21" r="1"/>
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Order Total:</p>
+                            <p class="text-sm font-semibold text-brand">LKR ${assignment.order.subtotal.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    
+                    ${assignment.notes ? `
+                    <div class="flex items-start space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 mt-0.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Notes:</p>
+                            <p class="text-sm text-slate-600">${assignment.notes}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="border-t border-slate-200 pt-4">
+                    <div class="grid grid-cols-2 gap-4 text-xs text-slate-500">
+                        <div>
+                            <p class="font-medium text-slate-700">Assigned:</p>
+                            <p>${formatDate(assignment.assignedAt)}</p>
+                        </div>
+                        ${assignment.pickedUpAt ? `
+                        <div>
+                            <p class="font-medium text-slate-700">Picked Up:</p>
+                            <p>${formatDate(assignment.pickedUpAt)}</p>
+                        </div>
+                        ` : ''}
+                        ${assignment.deliveredAt ? `
+                        <div>
+                            <p class="font-medium text-slate-700">Delivered:</p>
+                            <p>${formatDate(assignment.deliveredAt)}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Show/hide states
+        function showLoading() {
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loadingState.classList.add('hidden');
+        }
+
+        function showError(message) {
+            hideLoading();
+            document.getElementById('errorMessage').textContent = message;
+            errorState.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function showEmpty() {
+            hideLoading();
+            errorState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            assignmentsGrid.classList.add('hidden');
+        }
+
+        function showAssignments() {
+            hideLoading();
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            assignmentsGrid.classList.remove('hidden');
+        }
+
+        // Filtering and search
+        function filterAssignments() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const deliveryPersonFilter = document.getElementById('deliveryPersonFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredAssignments = assignments.filter(assignment => {
+                const matchesStatus = !statusFilter || assignment.status === statusFilter;
+                const matchesDeliveryPerson = !deliveryPersonFilter || assignment.deliveryPerson.id == deliveryPersonFilter;
+                const matchesSearch = !searchTerm || 
+                    (assignment.notes && assignment.notes.toLowerCase().includes(searchTerm)) ||
+                    assignment.order.username.toLowerCase().includes(searchTerm) ||
+                    assignment.deliveryPerson.name.toLowerCase().includes(searchTerm);
+                
+                return matchesStatus && matchesDeliveryPerson && matchesSearch;
+            });
+            
+            renderAssignments();
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('deliveryPersonFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            filteredAssignments = [...assignments];
+            renderAssignments();
+        }
+
+        function refreshAssignments() {
+            loadAssignments();
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast ${type}`;
+            
+            // Update icon based on type
+            if (type === 'success') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+            } else if (type === 'error') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+            } else if (type === 'warning') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
