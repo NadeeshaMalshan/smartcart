@@ -2,13 +2,16 @@ package com.group35.smartcart.controller;
 
 import com.group35.smartcart.entity.Customer;
 import com.group35.smartcart.entity.Product;
+import com.group35.smartcart.entity.Employee;
 import com.group35.smartcart.repository.ProductRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Controller
@@ -149,6 +152,163 @@ public class ProductController {
             e.printStackTrace();
             response.put("success", false);
             response.put("message", "Failed to get stock status");
+        }
+        
+        return response;
+    }
+    
+    // Store Manager - Product Management Page
+    @GetMapping("/manage")
+    public String manageProducts(HttpSession session, Model model) {
+        Employee employee = (Employee) session.getAttribute("employee");
+        
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            return "redirect:/employee/login";
+        }
+        
+        List<Product> products = productRepository.findAll();
+        List<String> categories = productRepository.findAllCategories();
+        
+        model.addAttribute("employee", employee);
+        model.addAttribute("products", products);
+        model.addAttribute("categories", categories);
+        model.addAttribute("title", "Manage Products - Store Manager");
+        
+        return "manage-products";
+    }
+    
+    // API: Get all products for management
+    @GetMapping("/api/products")
+    @ResponseBody
+    public Map<String, Object> getAllProducts(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            List<Product> products = productRepository.findAll();
+            response.put("success", true);
+            response.put("products", products);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to fetch products");
+        }
+        
+        return response;
+    }
+    
+    // API: Add new product
+    @PostMapping("/api/products")
+    @ResponseBody
+    public Map<String, Object> addProduct(@RequestBody Map<String, Object> productData, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Product product = new Product();
+            product.setName((String) productData.get("name"));
+            product.setDescription((String) productData.get("description"));
+            product.setPrice(new BigDecimal(productData.get("price").toString()));
+            product.setCategory((String) productData.get("category"));
+            product.setImageUrl((String) productData.get("imageUrl"));
+            product.setStockQuantity(Integer.parseInt(productData.get("stockQuantity").toString()));
+            
+            Product savedProduct = productRepository.save(product);
+            
+            response.put("success", true);
+            response.put("message", "Product added successfully");
+            response.put("product", savedProduct);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to add product: " + e.getMessage());
+        }
+        
+        return response;
+    }
+    
+    // API: Update product
+    @PutMapping("/api/products/{id}")
+    @ResponseBody
+    public Map<String, Object> updateProduct(@PathVariable Long id, 
+                                             @RequestBody Map<String, Object> productData, 
+                                             HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            Optional<Product> productOpt = productRepository.findById(id);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                product.setName((String) productData.get("name"));
+                product.setDescription((String) productData.get("description"));
+                product.setPrice(new BigDecimal(productData.get("price").toString()));
+                product.setCategory((String) productData.get("category"));
+                product.setImageUrl((String) productData.get("imageUrl"));
+                product.setStockQuantity(Integer.parseInt(productData.get("stockQuantity").toString()));
+                
+                Product updatedProduct = productRepository.save(product);
+                
+                response.put("success", true);
+                response.put("message", "Product updated successfully");
+                response.put("product", updatedProduct);
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to update product: " + e.getMessage());
+        }
+        
+        return response;
+    }
+    
+    // API: Delete product
+    @DeleteMapping("/api/products/{id}")
+    @ResponseBody
+    public Map<String, Object> deleteProduct(@PathVariable Long id, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.STORE_MANAGER) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        try {
+            if (productRepository.existsById(id)) {
+                productRepository.deleteById(id);
+                response.put("success", true);
+                response.put("message", "Product deleted successfully");
+            } else {
+                response.put("success", false);
+                response.put("message", "Product not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to delete product: " + e.getMessage());
         }
         
         return response;

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Products - Store Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+<div class="flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 min-h-screen text-white">
+        <h2 class="text-2xl font-bold p-4">Store Manager</h2>
+        <ul>
+            <li class="p-4 hover:bg-gray-700">
+                <a href="/employee/store-manager-dashboard" class="block w-full">Dashboard</a>
+            </li>
+            <li class="p-4 bg-gray-700 font-semibold rounded-l-md">
+                <a href="/shopping/manage" class="block w-full">Products</a>
+            </li>
+            
+            <li class="p-4 hover:bg-gray-700">
+                <a href="/employee/logout">Logout</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Product Management</h1>
+            <button onclick="openAddProductModal()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold">
+                + Add New Product
+            </button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-lg font-bold text-gray-700">Total Products</h2>
+                <p class="text-3xl text-blue-600 mt-2" id="totalProducts">0</p>
+            </div>
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-lg font-bold text-gray-700">In Stock</h2>
+                <p class="text-3xl text-green-600 mt-2" id="inStockProducts">0</p>
+            </div>
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-lg font-bold text-gray-700">Low Stock</h2>
+                <p class="text-3xl text-orange-600 mt-2" id="lowStockProducts">0</p>
+            </div>
+            <div class="bg-white p-6 rounded shadow">
+                <h2 class="text-lg font-bold text-gray-700">Out of Stock</h2>
+                <p class="text-3xl text-red-600 mt-2" id="outOfStockProducts">0</p>
+            </div>
+        </div>
+
+        <!-- Products Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-4 border-b">
+                <input type="text" id="searchInput" placeholder="Search products by name..." 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       onkeyup="filterProducts()">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-800 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left">ID</th>
+                            <th class="py-3 px-4 text-left">Image</th>
+                            <th class="py-3 px-4 text-left">Name</th>
+                            <th class="py-3 px-4 text-left">Category</th>
+                            <th class="py-3 px-4 text-right">Price</th>
+                            <th class="py-3 px-4 text-center">Stock</th>
+                            <th class="py-3 px-4 text-center">Status</th>
+                            <th class="py-3 px-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody" class="text-gray-700">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allProducts = [];
+
+// Load products on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+});
+
+// Load all products
+function loadProducts() {
+    fetch('/shopping/api/products')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allProducts = data.products;
+                displayProducts(allProducts);
+                updateStatistics(allProducts);
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'Failed to load products', 'error');
+        });
+}
+
+// Display products in table
+function displayProducts(products) {
+    const tbody = document.getElementById('productsTableBody');
+    tbody.innerHTML = '';
+
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">No products found</td></tr>';
+        return;
+    }
+
+    products.forEach(product => {
+        const stockStatus = getStockStatus(product.stockQuantity);
+        const row = `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4">${product.id}</td>
+                <td class="py-3 px-4">
+                    <img src="${product.imageUrl || '/images/no-image.png'}" 
+                         alt="${product.name}" 
+                         class="w-12 h-12 object-cover rounded">
+                </td>
+                <td class="py-3 px-4 font-semibold">${product.name}</td>
+                <td class="py-3 px-4">${product.category || 'N/A'}</td>
+                <td class="py-3 px-4 text-right">LKR ${parseFloat(product.price).toFixed(2)}</td>
+                <td class="py-3 px-4 text-center">
+                    <span class="font-semibold ${stockStatus.color}">${product.stockQuantity || 0}</span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${stockStatus.badgeClass}">
+                        ${stockStatus.text}
+                    </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                    <button onclick='editProduct(${JSON.stringify(product)})' 
+                            class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm mr-2">
+                        Edit
+                    </button>
+                    <button onclick="deleteProduct(${product.id}, '${product.name}')" 
+                            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+// Get stock status
+function getStockStatus(quantity) {
+    if (!quantity || quantity === 0) {
+        return {
+            text: 'Out of Stock',
+            color: 'text-red-600',
+            badgeClass: 'bg-red-100 text-red-800'
+        };
+    } else if (quantity <= 5) {
+        return {
+            text: 'Low Stock',
+            color: 'text-orange-600',
+            badgeClass: 'bg-orange-100 text-orange-800'
+        };
+    } else {
+        return {
+            text: 'In Stock',
+            color: 'text-green-600',
+            badgeClass: 'bg-green-100 text-green-800'
+        };
+    }
+}
+
+// Update statistics
+function updateStatistics(products) {
+    const total = products.length;
+    const inStock = products.filter(p => p.stockQuantity > 5).length;
+    const lowStock = products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= 5).length;
+    const outOfStock = products.filter(p => !p.stockQuantity || p.stockQuantity === 0).length;
+
+    document.getElementById('totalProducts').textContent = total;
+    document.getElementById('inStockProducts').textContent = inStock;
+    document.getElementById('lowStockProducts').textContent = lowStock;
+    document.getElementById('outOfStockProducts').textContent = outOfStock;
+}
+
+// Filter products by search
+function filterProducts() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allProducts.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) ||
+        (product.category && product.category.toLowerCase().includes(searchTerm))
+    );
+    displayProducts(filtered);
+}
+
+// Open Add Product Modal
+function openAddProductModal() {
+    Swal.fire({
+        title: 'Add New Product',
+        html: `
+            <div class="text-left">
+                <label class="block font-semibold mb-1">Product Name</label>
+                <input type="text" id="productName" class="swal2-input w-full" placeholder="Enter product name">
+                
+                <label class="block font-semibold mb-1 mt-3">Description</label>
+                <textarea id="productDescription" class="swal2-textarea w-full" placeholder="Enter description"></textarea>
+                
+                <label class="block font-semibold mb-1 mt-3">Category</label>
+                <input type="text" id="productCategory" class="swal2-input w-full" placeholder="e.g., Electronics, Groceries">
+                
+                <label class="block font-semibold mb-1 mt-3">Price (LKR)</label>
+                <input type="number" id="productPrice" class="swal2-input w-full" placeholder="0.00" step="0.01">
+                
+                <label class="block font-semibold mb-1 mt-3">Stock Quantity</label>
+                <input type="number" id="productStock" class="swal2-input w-full" placeholder="0" min="0">
+                
+                <label class="block font-semibold mb-1 mt-3">Image URL</label>
+                <input type="text" id="productImageUrl" class="swal2-input w-full" placeholder="https://...">
+            </div>
+        `,
+        width: '600px',
+        showCancelButton: true,
+        confirmButtonText: 'Add Product',
+        confirmButtonColor: '#16a34a',
+        preConfirm: () => {
+            const name = document.getElementById('productName').value;
+            const description = document.getElementById('productDescription').value;
+            const category = document.getElementById('productCategory').value;
+            const price = document.getElementById('productPrice').value;
+            const stock = document.getElementById('productStock').value;
+            const imageUrl = document.getElementById('productImageUrl').value;
+
+            if (!name || !price || !stock) {
+                Swal.showValidationMessage('Please fill in required fields (Name, Price, Stock)');
+                return false;
+            }
+
+            return {
+                name: name,
+                description: description,
+                category: category,
+                price: parseFloat(price),
+                stockQuantity: parseInt(stock),
+                imageUrl: imageUrl
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            addProduct(result.value);
+        }
+    });
+}
+
+// Add product
+function addProduct(productData) {
+    fetch('/shopping/api/products', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('Success', data.message, 'success');
+            loadProducts();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Failed to add product', 'error');
+    });
+}
+
+// Edit product
+function editProduct(product) {
+    Swal.fire({
+        title: 'Edit Product',
+        html: `
+            <div class="text-left">
+                <label class="block font-semibold mb-1">Product Name</label>
+                <input type="text" id="editProductName" class="swal2-input w-full" value="${product.name}">
+                
+                <label class="block font-semibold mb-1 mt-3">Description</label>
+                <textarea id="editProductDescription" class="swal2-textarea w-full">${product.description || ''}</textarea>
+                
+                <label class="block font-semibold mb-1 mt-3">Category</label>
+                <input type="text" id="editProductCategory" class="swal2-input w-full" value="${product.category || ''}">
+                
+                <label class="block font-semibold mb-1 mt-3">Price (LKR)</label>
+                <input type="number" id="editProductPrice" class="swal2-input w-full" value="${product.price}" step="0.01">
+                
+                <label class="block font-semibold mb-1 mt-3">Stock Quantity</label>
+                <input type="number" id="editProductStock" class="swal2-input w-full" value="${product.stockQuantity || 0}" min="0">
+                
+                <label class="block font-semibold mb-1 mt-3">Image URL</label>
+                <input type="text" id="editProductImageUrl" class="swal2-input w-full" value="${product.imageUrl || ''}">
+            </div>
+        `,
+        width: '600px',
+        showCancelButton: true,
+        confirmButtonText: 'Update Product',
+        confirmButtonColor: '#2563eb',
+        preConfirm: () => {
+            const name = document.getElementById('editProductName').value;
+            const description = document.getElementById('editProductDescription').value;
+            const category = document.getElementById('editProductCategory').value;
+            const price = document.getElementById('editProductPrice').value;
+            const stock = document.getElementById('editProductStock').value;
+            const imageUrl = document.getElementById('editProductImageUrl').value;
+
+            if (!name || !price || !stock) {
+                Swal.showValidationMessage('Please fill in required fields (Name, Price, Stock)');
+                return false;
+            }
+
+            return {
+                name: name,
+                description: description,
+                category: category,
+                price: parseFloat(price),
+                stockQuantity: parseInt(stock),
+                imageUrl: imageUrl
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            updateProduct(product.id, result.value);
+        }
+    });
+}
+
+// Update product
+function updateProduct(id, productData) {
+    fetch(`/shopping/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire('Success', data.message, 'success');
+            loadProducts();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Failed to update product', 'error');
+    });
+}
+
+// Delete product
+function deleteProduct(id, name) {
+    Swal.fire({
+        title: 'Delete Product?',
+        text: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/shopping/api/products/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Deleted!', data.message, 'success');
+                    loadProducts();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Failed to delete product', 'error');
+            });
+        }
+    });
+}
+</script>
+</body>
+</html>
