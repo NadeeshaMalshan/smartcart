@@ -9,6 +9,7 @@ import com.group35.smartcart.repository.OrderRepository;
 import com.group35.smartcart.repository.ProductRepository;
 import com.group35.smartcart.repository.BillRepository;
 import com.group35.smartcart.service.PdfService;
+import com.group35.smartcart.pattern.BillFactory;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -36,6 +37,9 @@ public class PaymentController {
     
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private BillFactory billFactory;
     
     @Autowired
     private ProductRepository productRepository;
@@ -163,6 +167,7 @@ public class PaymentController {
                            @RequestParam("bankName") String bankName,
                            @RequestParam("accountHolderName") String accountHolderName,
                            @RequestParam("accountNumber") String accountNumber,
+                           @RequestParam(value = "billType", defaultValue = "DOWNLOADABLE") String billType,
                            HttpSession session) {
         try {
             // Check if user is logged in
@@ -193,13 +198,17 @@ public class PaymentController {
                 return "{\"success\": false, \"message\": \"Account number is required\"}";
             }
             
-            // Parse subtotal
+            // Parse subtotal from frontend
             BigDecimal subtotalAmount;
             try {
                 subtotalAmount = new BigDecimal(subtotal);
             } catch (NumberFormatException e) {
                 return "{\"success\": false, \"message\": \"Invalid subtotal format\"}";
             }
+            
+            // Add delivery fee to subtotal (LKR 350)
+            BigDecimal deliveryFee = new BigDecimal("350.00");
+            BigDecimal totalWithDelivery = subtotalAmount.add(deliveryFee);
             
             // Save payment details to customer_payment table
             CustomerPayment paymentDetails = new CustomerPayment(
@@ -212,15 +221,35 @@ public class PaymentController {
             customerPaymentRepository.save(paymentDetails);
             
             // Create and save order to payment table
+            // Note: subtotal column now stores total with delivery fee (subtotal + 350)
+            // Convert billType to printed_bill: 1 for PRINTED, 0 for DOWNLOADABLE
+            Integer printedBillFlag = "PRINTED".equalsIgnoreCase(billType) ? 1 : 0;
+            
             Order order = new Order(
                 customer.getUsername(),
                 productIds.trim(),
                 productQuantities.trim(),
-                subtotalAmount,
-                payslipLocationPath != null ? payslipLocationPath.trim() : null
+                totalWithDelivery, // Save total (subtotal + delivery fee) in subtotal column
+                payslipLocationPath != null ? payslipLocationPath.trim() : null,
+                printedBillFlag
             );
             
             Order savedOrder = orderRepository.save(order);
+            
+            // Use Factory Pattern to generate bill based on user's choice
+            try {
+                com.group35.smartcart.pattern.Bill billGenerator = billFactory.createBill(billType, savedOrder);
+                if (billGenerator != null) {
+                    String billResult = billGenerator.generate(savedOrder);
+                    System.out.println("Bill generation result: " + billResult);
+                    System.out.println("Bill type selected: " + billType);
+                } else {
+                    System.err.println("Failed to create bill generator for type: " + billType);
+                }
+            } catch (Exception e) {
+                System.err.println("Error generating bill: " + e.getMessage());
+                e.printStackTrace();
+            }
             
             return "{\"success\": true, \"message\": \"Order placed successfully\", \"paymentId\": " + savedOrder.getPaymentId() + "}";
             

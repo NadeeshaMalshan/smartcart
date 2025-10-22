@@ -100,12 +100,35 @@
                         <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center cart-count" style="display: none;">0</span>
                     </a>
                     
-                    <!-- User Menu (only show when logged in) -->
-                    <div th:if="${isLoggedIn}" class="relative">
-                        <button class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full hover:bg-slate-200">
+                    <!-- User Menu Dropdown (only show when logged in) -->
+                    <div th:if="${isLoggedIn}" class="relative" id="userDropdown">
+                        <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full hover:bg-slate-200">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M19.001 19.001 20 20l1-1"/><path d="m20 14-1-1-1 1"/><path d="M19.001 9.001 20 8l1 1"/><path d="m20 16 1 1-1 1"/></svg>
                             <span class="font-semibold" th:text="${customer.username}">User</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform" id="dropdownIcon"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 z-50">
+                            <div class="py-1">
+                                <a href="/orders" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                                    Orders
+                                </a>
+                                <a href="/my-deliver-assigments" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                                    Order Assignments
+                                </a>
+                                <a href="/reviews" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    Reviews
+                                </a>
+                                <hr class="my-1 border-slate-200">
+                                <a href="/user-settings" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.196-14.196L13.5 8.5m-3 3-3.696 3.696M23 12h-6m-6 0H1m14.196 5.196L13.5 13.5m-3-3-3.696-3.696"></path></svg>
+                                    User Settings
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -278,9 +301,31 @@
             }, 3000);
         }
         
+        // User Dropdown Toggle
+        function toggleUserDropdown() {
+            const menu = document.getElementById('userDropdownMenu');
+            const icon = document.getElementById('dropdownIcon');
+            if (menu && icon) {
+                menu.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            }
+        }
+        
         // Initialize cart count on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateCartCount();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('userDropdown');
+                const menu = document.getElementById('userDropdownMenu');
+                const icon = document.getElementById('dropdownIcon');
+                
+                if (dropdown && menu && icon && !dropdown.contains(event.target)) {
+                    menu.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
+            });
         });
     </script>
 </body>

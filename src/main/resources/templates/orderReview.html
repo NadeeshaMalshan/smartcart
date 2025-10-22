@@ -139,17 +139,47 @@
                                     <span id="subtotal" class="font-semibold">LKR 0.00</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-600">Delivery</span>
-                                    <span class="font-semibold text-green-600">FREE</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Tax (15%)</span>
-                                    <span id="tax" class="font-semibold">LKR 0.00</span>
+                                    <span class="text-slate-600">Delivery Fee</span>
+                                    <span id="delivery-fee" class="font-semibold">LKR 350.00</span>
                                 </div>
                                 <hr class="border-slate-200">
                                 <div class="flex justify-between text-lg font-bold">
                                     <span>Total</span>
                                     <span id="total" class="text-brand">LKR 0.00</span>
+                                </div>
+                            </div>
+
+                            <!-- Bill Options -->
+                            <div class="bg-white border-2 border-slate-200 rounded-xl p-5 mb-6">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 text-green-600"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                    Bill Options
+                                </h3>
+                                
+                                <!-- Printed Bill Option -->
+                                <label class="flex items-start p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer mb-3 hover:bg-blue-100 transition-colors">
+                                    <input type="checkbox" id="printedBillCheckbox" class="mt-1 mr-3 h-5 w-5 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500" checked>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-slate-800 mb-1">Request Printed Bill</div>
+                                        <div class="text-sm text-slate-600 mb-2">Get a physical printed copy of your receipt</div>
+                                        <ul class="text-xs text-slate-500 space-y-1">
+                                            <li class="flex items-start">
+                                                <span class="text-red-500 mr-1">•</span>
+                                                <span>A downloadable PDF bill will always be generated</span>
+                                            </li>
+                                            <li class="flex items-start">
+                                                <span class="text-red-500 mr-1">•</span>
+                                                <span>Printed bills are processed separately and may take additional time</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </label>
+                                
+                                <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                    <p class="text-xs text-slate-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-1 text-blue-500"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                        All orders automatically include a downloadable PDF bill. Check the box above if you also need a printed copy.
+                                    </p>
                                 </div>
                             </div>
 
@@ -289,12 +319,11 @@
         
         function renderOrderSummary() {
             const subtotalElement = document.getElementById('subtotal');
-            const taxElement = document.getElementById('tax');
             const totalElement = document.getElementById('total');
             
             if (selectedItems.length === 0) {
                 subtotalElement.textContent = 'LKR 0.00';
-                taxElement.textContent = 'LKR 0.00';
+                document.getElementById('delivery-fee').textContent = 'LKR 0.00';
                 totalElement.textContent = 'LKR 0.00';
                 return;
             }
@@ -306,11 +335,11 @@
                 return sum + ((item.price || 0) * item.quantity);
             }, 0);
             
-            const tax = subtotal * 0.15; // 15% tax
-            const total = subtotal + tax;
+            const deliveryFee = 350.00; // LKR 350 delivery fee
+            const total = subtotal + deliveryFee;
             
             subtotalElement.textContent = `LKR ${subtotal.toFixed(2)}`;
-            taxElement.textContent = `LKR ${tax.toFixed(2)}`;
+            document.getElementById('delivery-fee').textContent = `LKR ${deliveryFee.toFixed(2)}`;
             totalElement.textContent = `LKR ${total.toFixed(2)}`;
         }
         
@@ -351,6 +380,10 @@
                     // Get payslip location path from localStorage (if available)
                     const payslipLocationPath = localStorage.getItem('payslipLocationPath') || '';
                     
+                    // Get bill option
+                    const printedBillCheckbox = document.getElementById('printedBillCheckbox');
+                    const billType = printedBillCheckbox && printedBillCheckbox.checked ? 'PRINTED' : 'DOWNLOADABLE';
+                    
                     // Send order to backend
                     const formData = new FormData();
                     formData.append('productIds', productIds);
@@ -360,6 +393,7 @@
                     formData.append('bankName', paymentInfo.bankName || '');
                     formData.append('accountHolderName', paymentInfo.accountHolderName || '');
                     formData.append('accountNumber', paymentInfo.accountNumber || '');
+                    formData.append('billType', billType);
                     
                     const response = await fetch('/place-order', {
                         method: 'POST',

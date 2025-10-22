@@ -109,12 +109,8 @@
                                     <span id="subtotal" class="font-semibold">LKR 0.00</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-600">Delivery</span>
-                                    <span class="font-semibold text-green-600">FREE</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-600">Tax</span>
-                                    <span id="tax" class="font-semibold">LKR 0.00</span>
+                                    <span class="text-slate-600">Delivery Fee</span>
+                                    <span id="delivery-fee" class="font-semibold">LKR 350.00</span>
                                 </div>
                                 <hr class="border-slate-200">
                                 <div class="flex justify-between text-lg font-bold">
@@ -298,11 +294,11 @@
             
             console.log('Subtotal:', subtotal);
             
-            const tax = subtotal * 0.15; // 15% tax
-            const total = subtotal + tax;
+            const deliveryFee = selectedItems.size > 0 ? 350.00 : 0; // LKR 350 delivery fee
+            const total = subtotal + deliveryFee;
             
             document.getElementById('subtotal').textContent = `LKR ${subtotal.toFixed(2)}`;
-            document.getElementById('tax').textContent = `LKR ${tax.toFixed(2)}`;
+            document.getElementById('delivery-fee').textContent = `LKR ${deliveryFee.toFixed(2)}`;
             document.getElementById('total').textContent = `LKR ${total.toFixed(2)}`;
             
             // Show/hide checkout button based on selected items
@@ -313,7 +309,7 @@
                 checkoutBtn.style.display = 'none';
             }
             
-            console.log('Final totals - Subtotal:', subtotal, 'Tax:', tax, 'Total:', total);
+            console.log('Final totals - Subtotal:', subtotal, 'Delivery Fee:', deliveryFee, 'Total:', total);
         }
         
         function handleItemSelection(event) {

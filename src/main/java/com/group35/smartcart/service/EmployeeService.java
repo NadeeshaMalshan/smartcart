@@ -43,6 +43,31 @@ public class EmployeeService {
     public boolean employeeExists(String empid) {
         return employeeRepository.existsByEmpid(empid);
     }
+    
+    public boolean updateEmployeePassword(String empid, String newPassword) {
+        Optional<Employee> employeeOpt = employeeRepository.findByEmpidAndIsActiveTrue(empid);
+        
+        if (employeeOpt.isPresent()) {
+            Employee employee = employeeOpt.get();
+            employee.setPassword(newPassword);
+            employee.setUpdatedAt(java.time.LocalDateTime.now());
+            employeeRepository.save(employee);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    public boolean deleteEmployee(String empid) {
+        Optional<Employee> employeeOpt = employeeRepository.findByEmpidAndIsActiveTrue(empid);
+        
+        if (employeeOpt.isPresent()) {
+            employeeRepository.delete(employeeOpt.get());
+            return true;
+        }
+        
+        return false;
+    }
 }
 
 

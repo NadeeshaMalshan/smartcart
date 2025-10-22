@@ -36,6 +36,10 @@ public class HomeController {
     public String deliveryAssigmentManagement(){
         return "deliver-assigment-management";
     }
+    @GetMapping("/my-deliver-assigments")
+    public String myDeliveryAssigments(){
+        return "delivery-assignments";
+    }
 
     @GetMapping("/admin-reviews")
     public String adminReviews(Model model, HttpSession session){

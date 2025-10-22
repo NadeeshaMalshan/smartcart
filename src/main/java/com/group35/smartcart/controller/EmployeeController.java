@@ -433,6 +433,9 @@ public class EmployeeController {
             // Convert product IDs to product names
             String productNames = convertProductIdsToNames(order.getProductIds());
             
+            // Note: order.getSubtotal() already includes delivery fee (LKR 350)
+            // No need to add delivery fee again
+            
             // Create bill
             Bill bill = new Bill(
                 order.getPaymentId(),
@@ -440,8 +443,8 @@ public class EmployeeController {
                 order.getUsername(),
                 productNames,
                 order.getProductQuantities(),
-                order.getSubtotal(),
-                order.getSubtotal(), // Total is same as subtotal for now
+                order.getSubtotal(), // This already includes delivery fee
+                order.getSubtotal(), // Total is same as subtotal (both include delivery fee)
                 customerPayment.getBankName(),
                 customerPayment.getAccountNumber()
             );
@@ -883,7 +886,7 @@ public class EmployeeController {
         return response;
     }
     
-    // Delete employee (soft delete by setting isActive to false)
+    // Delete employee (permanent delete from database)
     @DeleteMapping("/api/employees/{empid}")
     @ResponseBody
     public Map<String, Object> deleteEmployee(@PathVariable String empid, HttpSession session) {
@@ -904,15 +907,11 @@ public class EmployeeController {
         }
         
         try {
-            Optional<Employee> employeeOpt = employeeService.getEmployeeByEmpid(empid);
-            if (employeeOpt.isPresent()) {
-                Employee empToDelete = employeeOpt.get();
-                empToDelete.setIsActive(false);
-                empToDelete.setUpdatedAt(LocalDateTime.now());
-                employeeService.saveEmployee(empToDelete);
-                
+            boolean deleted = employeeService.deleteEmployee(empid);
+            
+            if (deleted) {
                 response.put("success", true);
-                response.put("message", "Employee deleted successfully");
+                response.put("message", "Employee " + empid + " deleted permanently");
             } else {
                 response.put("success", false);
                 response.put("message", "Employee not found");
@@ -921,7 +920,49 @@ public class EmployeeController {
         } catch (Exception e) {
             e.printStackTrace();
             response.put("success", false);
-            response.put("message", "Failed to delete employee");
+            response.put("message", "Failed to delete employee: " + e.getMessage());
+        }
+        
+        return response;
+    }
+    
+    // Update employee password
+    @PutMapping("/api/employees/{empid}/password")
+    @ResponseBody
+    public Map<String, Object> updateEmployeePassword(@PathVariable String empid,
+                                                      @RequestParam String newPassword,
+                                                      HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Employee employee = (Employee) session.getAttribute("employee");
+        if (employee == null || employee.getType() != Employee.EmployeeType.IT_ASSISTANT) {
+            response.put("success", false);
+            response.put("message", "Unauthorized access");
+            return response;
+        }
+        
+        // Validate new password
+        if (newPassword == null || newPassword.trim().length() < 6) {
+            response.put("success", false);
+            response.put("message", "Password must be at least 6 characters");
+            return response;
+        }
+        
+        try {
+            boolean updated = employeeService.updateEmployeePassword(empid, newPassword.trim());
+            
+            if (updated) {
+                response.put("success", true);
+                response.put("message", "Password updated successfully for employee: " + empid);
+            } else {
+                response.put("success", false);
+                response.put("message", "Employee not found or inactive");
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Failed to update password: " + e.getMessage());
         }
         
         return response;
