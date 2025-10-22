@@ -79,6 +79,20 @@
                 
                 <!-- Navigation -->
                 <div class="flex items-center space-x-4 order-2 md:order-3">
+                    <!-- Orders Button (only show when logged in) -->
+                    <a th:if="${isLoggedIn}" href="/orders" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        <span class="font-semibold">Orders</span>
+                    </a>
+                    <a th:if="${isLoggedIn}" href="/my-deliver-assigments" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        <span class="font-semibold">My Deliver Assigments</span>
+                    </a>
+                     <a th:if="${isLoggedIn}" href="/reviews" class="relative flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/><path d="M6.5 6.5h.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/></svg>
+                        <span class="font-semibold">Reviews</span>
+                    </a>
+                    
                     <!-- Cart -->
                     <a href="/cart" class="relative flex items-center space-x-2 bg-green-100 text-brand px-4 py-2 rounded-full hover:bg-green-200">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
