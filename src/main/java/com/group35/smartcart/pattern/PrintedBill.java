@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 
 //concrete class printed bill
+@Component
 public class PrintedBill implements Bill {
     //constant
     private static final String BILL_TYPE = "PRINTED";

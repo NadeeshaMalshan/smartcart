@@ -9,6 +9,7 @@ import java.util.Map;
 
 
 // factory class
+@Component
 public class BillFactory {
     
     private final Map<String, Bill> billStrategies;

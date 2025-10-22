@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 
 
 // downloadable bill concrete class
+@Component
 public class DownloadableBill implements Bill {
     
     private static final String BILL_TYPE = "DOWNLOADABLE";

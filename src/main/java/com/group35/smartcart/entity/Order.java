@@ -41,6 +41,9 @@ public class Order {
     @Column(name = "order_status")
     private String orderStatus = "PENDING";
     
+    @Column(name = "printed_bill")
+    private Integer printedBill = 0; // 1 for printed bill, 0 for downloadable bill
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -61,6 +64,12 @@ public class Order {
         this.productQuantities = productQuantities;
         this.subtotal = subtotal;
         this.payslipLocationPath = payslipLocationPath;
+    }
+    
+    public Order(String username, String productIds, String productQuantities, 
+                 BigDecimal subtotal, String payslipLocationPath, Integer printedBill) {
+        this(username, productIds, productQuantities, subtotal, payslipLocationPath);
+        this.printedBill = printedBill;
     }
     
     // Getters and Setters
@@ -134,6 +143,14 @@ public class Order {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Integer getPrintedBill() {
+        return printedBill;
+    }
+    
+    public void setPrintedBill(Integer printedBill) {
+        this.printedBill = printedBill;
     }
     
     @PreUpdate
